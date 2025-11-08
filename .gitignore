@@ -1,0 +1,28 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE and Editor files
+# VS Code
+.vscode/
+# IntelliJ IDEA
+.idea/
+*.iml
+# Vim
+*.swp
+*.swo
+# Emacs
+*~
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
