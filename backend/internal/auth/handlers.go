@@ -52,20 +52,29 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedDeviceID := HashDeviceID(req.DeviceID)
-
-	existingUser, err := h.queries.GetUserByDeviceID(r.Context(), hashedDeviceID)
-	if err == nil {
-		resp := RegisterResponse{
-			Message: "Device already registered. Awaiting approval.",
-			UserID:  existingUser.ID,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+	users, err := h.queries.ListUsers(r.Context())
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
-	} else if err != sql.ErrNoRows {
-		slog.Error("failed to check existing user", "error", err)
+	}
+
+	for _, existingUser := range users {
+		if CompareDeviceID(existingUser.DeviceID, req.DeviceID) {
+			resp := RegisterResponse{
+				Message: "Device already registered. Awaiting approval.",
+				UserID:  existingUser.ID,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+	}
+
+	hashedDeviceID, err := HashDeviceID(req.DeviceID)
+	if err != nil {
+		slog.Error("failed to hash device ID", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -123,15 +132,23 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedDeviceID := HashDeviceID(req.DeviceID)
-
-	user, err := h.queries.GetUserByDeviceID(r.Context(), hashedDeviceID)
-	if err == sql.ErrNoRows {
-		http.Error(w, "Device not registered", http.StatusUnauthorized)
-		return
-	} else if err != nil {
-		slog.Error("failed to get user", "error", err)
+	users, err := h.queries.ListUsers(r.Context())
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	var user *database.User
+	for _, u := range users {
+		if CompareDeviceID(u.DeviceID, req.DeviceID) {
+			user = &u
+			break
+		}
+	}
+
+	if user == nil {
+		http.Error(w, "Device not registered", http.StatusUnauthorized)
 		return
 	}
 

@@ -1,13 +1,21 @@
 package auth
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// HashDeviceID creates a SHA-256 hash of the device ID for secure storage.
+// HashDeviceID creates a bcrypt hash of the device ID for secure storage.
 // The original device ID is never stored in the database.
-func HashDeviceID(deviceID string) string {
-	hash := sha256.Sum256([]byte(deviceID))
-	return hex.EncodeToString(hash[:])
+func HashDeviceID(deviceID string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(deviceID), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// CompareDeviceID compares a plain device ID against a bcrypt hash.
+func CompareDeviceID(hashedDeviceID, plainDeviceID string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedDeviceID), []byte(plainDeviceID))
+	return err == nil
 }

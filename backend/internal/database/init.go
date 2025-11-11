@@ -46,7 +46,7 @@ func runMigrations(db *sql.DB) error {
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    device_id TEXT NOT NULL UNIQUE,
+    device_id TEXT NOT NULL,
     approved BOOLEAN NOT NULL DEFAULT FALSE,
     last_active DATETIME,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
