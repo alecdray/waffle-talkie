@@ -91,7 +91,7 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("user registered", "user_id", user.ID, "name", user.Name, "device_id", user.DeviceID)
+	slog.Info("user registered", "user_id", user.ID, "name", user.Name)
 
 	resp := RegisterResponse{
 		Message: "Registration successful. Awaiting admin approval.",
@@ -161,7 +161,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to update last active", "error", err)
 	}
 
-	token, err := GenerateToken(user.ID, user.DeviceID, h.secretKey)
+	token, err := GenerateToken(user.ID, h.secretKey)
 	if err != nil {
 		slog.Error("failed to generate token", "error", err)
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
@@ -232,8 +232,16 @@ func (h *Handler) HandleApprove(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+type UserResponse struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Approved   bool   `json:"approved"`
+	LastActive string `json:"last_active,omitempty"`
+	CreatedAt  string `json:"created_at"`
+}
+
 type PendingUsersResponse struct {
-	Users []database.User `json:"users"`
+	Users []UserResponse `json:"users"`
 }
 
 // HandleListPendingUsers returns all users awaiting approval.
@@ -250,10 +258,19 @@ func (h *Handler) HandleListPendingUsers(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	pendingUsers := make([]database.User, 0)
+	pendingUsers := make([]UserResponse, 0)
 	for _, user := range users {
 		if !user.Approved {
-			pendingUsers = append(pendingUsers, user)
+			userResp := UserResponse{
+				ID:        user.ID,
+				Name:      user.Name,
+				Approved:  user.Approved,
+				CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			}
+			if user.LastActive.Valid {
+				userResp.LastActive = user.LastActive.Time.Format("2006-01-02T15:04:05Z07:00")
+			}
+			pendingUsers = append(pendingUsers, userResp)
 		}
 	}
 

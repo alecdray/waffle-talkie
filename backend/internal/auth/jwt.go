@@ -9,18 +9,16 @@ import (
 
 // Claims contains the JWT token payload with user identity.
 type Claims struct {
-	UserID   string `json:"user_id"`
-	DeviceID string `json:"device_id"`
+	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken creates a JWT token valid for 30 days.
-func GenerateToken(userID string, deviceID string, secretKey string) (string, error) {
+func GenerateToken(userID string, secretKey string) (string, error) {
 	expirationTime := time.Now().Add(30 * 24 * time.Hour)
 
 	claims := &Claims{
-		UserID:   userID,
-		DeviceID: deviceID,
+		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

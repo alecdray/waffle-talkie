@@ -10,8 +10,7 @@ import (
 type contextKey string
 
 const (
-	UserIDKey   contextKey = "user_id"
-	DeviceIDKey contextKey = "device_id"
+	UserIDKey contextKey = "user_id"
 )
 
 // AuthMiddleware extracts and validates the Bearer token, then adds user context.
@@ -42,7 +41,6 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 
 		// Add claims to context
 		ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
-		ctx = context.WithValue(ctx, DeviceIDKey, claims.DeviceID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -52,10 +50,4 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(UserIDKey).(string)
 	return userID, ok
-}
-
-// GetDeviceIDFromContext extracts the device ID from the request context.
-func GetDeviceIDFromContext(ctx context.Context) (string, bool) {
-	deviceID, ok := ctx.Value(DeviceIDKey).(string)
-	return deviceID, ok
 }
