@@ -43,6 +43,7 @@ func InitDB(dbPath string) (*sql.DB, *Queries, error) {
 func runMigrations(db *sql.DB) error {
 	schema := `
 -- Users table
+-- Note: device_id stores bcrypt hash, never plain text
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

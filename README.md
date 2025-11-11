@@ -21,10 +21,16 @@ Backend:
 ## Auth
 
 1. User provides their name and sends a request to verify to the backend with device info
-2. The backend server stores the user's identity and device information in the database
-3. Admin manually approves the user's identity and device information
-4. Identity and device information are verified by the backend server and a token is generated
-5. User is granted access to the application
+2. The backend server hashes the device ID using bcrypt and stores it securely in the database
+3. Admin manually approves the user's identity
+4. User authenticates with their device ID, which is verified against the stored hash
+5. Backend generates a JWT token (valid for 30 days) containing only the user ID
+6. User is granted access to the application
+
+**Security notes:**
+- Device IDs are hashed with bcrypt before storage (never stored in plain text)
+- Hashed device IDs are never exposed to clients via API responses, JWT tokens, or logs
+- JWT tokens contain only the user ID, no device information
 
 ## Broadcast Audio
 
