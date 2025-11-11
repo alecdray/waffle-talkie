@@ -34,7 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := server.NewServerMux(queries, config.Config.JWTSecret, config.Config.AudioDirectory)
+	mux := server.NewMux(queries, config.Config.JWTSecret, config.Config.AudioDirectory)
 	serverAddress := fmt.Sprintf("%s:%s", "", config.Config.Port)
 	slog.Info("starting server", "address", serverAddress)
 	err = http.ListenAndServe(serverAddress, mux)

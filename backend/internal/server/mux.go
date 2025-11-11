@@ -9,7 +9,7 @@ import (
 	"github.com/alecdray/waffle-talkie/internal/database"
 )
 
-func NewServerMux(queries *database.Queries, jwtSecret string, audioDirectory string) http.Handler {
+func NewMux(queries *database.Queries, jwtSecret string, audioDirectory string) http.Handler {
 	rootMux := http.NewServeMux()
 	authHandler := auth.NewHandler(queries, jwtSecret)
 	audioHandler := audio.NewHandler(queries, audioDirectory)
