@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/alecdray/waffle-talkie/internal/audio"
 	"github.com/alecdray/waffle-talkie/internal/auth"
 	"github.com/alecdray/waffle-talkie/internal/database"
 )
 
-func NewServerMux(queries *database.Queries, jwtSecret string) http.Handler {
+func NewServerMux(queries *database.Queries, jwtSecret string, audioDirectory string) http.Handler {
 	rootMux := http.NewServeMux()
 	authHandler := auth.NewHandler(queries, jwtSecret)
+	audioHandler := audio.NewHandler(queries, audioDirectory)
 
 	rootMux.HandleFunc("/", handleRoot)
 	rootMux.HandleFunc("/health", handleHealth)
@@ -24,6 +26,10 @@ func NewServerMux(queries *database.Queries, jwtSecret string) http.Handler {
 
 	protectedMux := http.NewServeMux()
 	protectedMux.HandleFunc("/api/me", handleMe(queries))
+	protectedMux.HandleFunc("/api/messages", audioHandler.HandleGetMessages)
+	protectedMux.HandleFunc("/api/messages/upload", audioHandler.HandleUpload)
+	protectedMux.HandleFunc("/api/messages/download", audioHandler.HandleDownload)
+	protectedMux.HandleFunc("/api/messages/received", audioHandler.HandleMarkReceived)
 	rootMux.Handle("/api/", authHandler.AuthMiddleware(protectedMux))
 
 	return rootMux

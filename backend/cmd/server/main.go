@@ -22,7 +22,7 @@ func main() {
 	}
 	defer db.Close()
 
-	mux := server.NewServerMux(queries, config.Config.JWTSecret)
+	mux := server.NewServerMux(queries, config.Config.JWTSecret, config.Config.AudioDirectory)
 	serverAddress := fmt.Sprintf("%s:%s", "", config.Config.Port)
 	slog.Info("starting server", "address", serverAddress)
 	err = http.ListenAndServe(serverAddress, mux)

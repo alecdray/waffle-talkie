@@ -71,17 +71,16 @@ const getUnreceivedMessagesByUser = `-- name: GetUnreceivedMessagesByUser :many
 SELECT am.id, am.sender_user_id, am.file_path, am.duration, am.created_at, am.deleted_at
 FROM audio_messages am
 WHERE am.deleted_at IS NULL
-  AND NOT EXISTS (
-    SELECT 1
+  AND am.id NOT IN (
+    SELECT amr.audio_message_id
     FROM audio_message_receipts amr
-    WHERE amr.audio_message_id = am.id
-      AND amr.user_id = ?
+    WHERE amr.user_id = ?
   )
 ORDER BY am.created_at DESC
 `
 
-func (q *Queries) GetUnreceivedMessagesByUser(ctx context.Context) ([]AudioMessage, error) {
-	rows, err := q.db.QueryContext(ctx, getUnreceivedMessagesByUser)
+func (q *Queries) GetUnreceivedMessagesByUser(ctx context.Context, userID string) ([]AudioMessage, error) {
+	rows, err := q.db.QueryContext(ctx, getUnreceivedMessagesByUser, userID)
 	if err != nil {
 		return nil, err
 	}

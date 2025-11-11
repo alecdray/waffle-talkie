@@ -20,18 +20,20 @@ func init() {
 }
 
 type config struct {
-	Env          string
-	Port         string
-	DatabasePath string
-	JWTSecret    string
+	Env            string
+	Port           string
+	DatabasePath   string
+	JWTSecret      string
+	AudioDirectory string
 }
 
 func NewConfig() *config {
 	return &config{
-		Env:          getEnvWithDefault("ENV", "local"),
-		Port:         getEnvWithDefault("PORT", "8080"),
-		DatabasePath: getEnvWithDefault("DATABASE_PATH", "./waffle-talkie.db"),
-		JWTSecret:    getEnvWithDefault("JWT_SECRET", "dev-secret-change-in-production"),
+		Env:            getEnvWithDefault("ENV", "local"),
+		Port:           getEnvWithDefault("PORT", "8080"),
+		DatabasePath:   getEnvWithDefault("DATABASE_PATH", "./waffle-talkie.db"),
+		JWTSecret:      getEnvWithDefault("JWT_SECRET", "dev-secret-change-in-production"),
+		AudioDirectory: getEnvWithDefault("AUDIO_DIRECTORY", "./audio"),
 	}
 }
 

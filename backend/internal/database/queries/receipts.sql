@@ -26,10 +26,9 @@ WHERE audio_message_id = ?;
 SELECT am.*
 FROM audio_messages am
 WHERE am.deleted_at IS NULL
-  AND NOT EXISTS (
-    SELECT 1
+  AND am.id NOT IN (
+    SELECT amr.audio_message_id
     FROM audio_message_receipts amr
-    WHERE amr.audio_message_id = am.id
-      AND amr.user_id = ?
+    WHERE amr.user_id = ?
   )
 ORDER BY am.created_at DESC;
