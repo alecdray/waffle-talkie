@@ -1,50 +1,46 @@
-# Welcome to your Expo app 👋
+# Waffle Talkie Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native mobile app for Waffle Talkie voice messaging.
 
-## Get started
+## Setup
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Install dependencies:
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Configure API URL:
+Copy `.env.example` to `.env` and set your API URL:
+```bash
+cp .env.example .env
+```
 
-## Learn more
+Edit `.env`:
+```
+EXPO_PUBLIC_API_URL=http://localhost:8080
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+**Platform-specific URLs:**
+- iOS Simulator: `http://localhost:8080`
+- Android Emulator: `http://10.0.2.2:8080`
+- Physical Device: `http://YOUR_LOCAL_IP:8080` (e.g., `http://192.168.1.100:8080`)
+- Production: `https://your-api-domain.com`
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Running the App
 
-## Join the community
+```bash
+# Start development server
+npm start
 
-Join our community of developers creating universal apps.
+# Run on iOS
+npm run start:ios
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Run on Android
+npm run run:android
+```
+
+## Environment Variables
+
+- `EXPO_PUBLIC_API_URL`: Backend API base URL (required)
+
+The app will automatically use the appropriate default URL based on the platform if no environment variable is set.

@@ -8,6 +8,9 @@
     "scheme": "waffletalkie",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "apiUrl": "${EXPO_PUBLIC_API_URL}"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.waffle-talkie"
