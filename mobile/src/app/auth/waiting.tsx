@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,7 +15,7 @@ export default function WaitingScreen() {
   const { auth, login, logout } = useAuth();
   const router = useRouter();
 
-  const handleCheckStatus = async () => {
+  const handleCheckStatus = useCallback(async () => {
     try {
       setIsChecking(true);
       await login();
@@ -25,7 +25,7 @@ export default function WaitingScreen() {
       if (errorMessage.includes("not approved")) {
         Alert.alert(
           "Not Approved Yet",
-          "Your account is still pending approval. Please try again later."
+          "Your account is still pending approval. Please try again later.",
         );
       } else {
         Alert.alert("Error", errorMessage || "Failed to check status");
@@ -33,7 +33,11 @@ export default function WaitingScreen() {
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [login, router]);
+
+  useEffect(() => {
+    handleCheckStatus();
+  }, [handleCheckStatus]);
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -83,8 +87,9 @@ export default function WaitingScreen() {
         </TouchableOpacity>
 
         <Text style={styles.info}>
-          You'll be able to use the app once an admin approves your account.
-          Check back later or contact your administrator.
+          {
+            "You'll be able to use the app once an admin approves your account. Check back later or contact your administrator."
+          }
         </Text>
       </View>
     </View>

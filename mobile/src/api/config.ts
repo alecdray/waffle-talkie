@@ -13,10 +13,7 @@ const getDefaultApiUrl = () => {
   return "https://api.example.com";
 };
 
-export const API_URL =
-  Constants.expoConfig?.extra?.apiUrl ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  getDefaultApiUrl();
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || getDefaultApiUrl();
 
 export const createHeaders = (token?: string): HeadersInit => {
   const headers: HeadersInit = {

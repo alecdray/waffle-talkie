@@ -61,8 +61,14 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 
 	for _, existingUser := range users {
 		if CompareDeviceID(existingUser.DeviceID, req.DeviceID) {
+			if existingUser.Name != req.Name {
+				h.queries.UpdateUserName(r.Context(), database.UpdateUserNameParams{
+					ID:   existingUser.ID,
+					Name: req.Name,
+				})
+			}
 			resp := RegisterResponse{
-				Message: "Device already registered. Awaiting approval.",
+				Message: "Device already registered",
 				UserID:  existingUser.ID,
 			}
 			w.Header().Set("Content-Type", "application/json")

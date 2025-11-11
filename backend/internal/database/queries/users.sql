@@ -33,3 +33,8 @@ WHERE id = ?;
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = ?;
+
+-- name: UpdateUserName :exec
+UPDATE users
+SET name = ?
+WHERE id = ?;

@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await storeJson(AUTH_STORAGE_KEY, authData);
       setAuth(authData);
     } catch (err) {
+      console.error("Failed to register:", err);
       setError((err as Error).message);
       throw err;
     } finally {
