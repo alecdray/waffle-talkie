@@ -1,17 +1,17 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     device_id TEXT NOT NULL UNIQUE,
-    approved INTEGER NOT NULL DEFAULT 0,
+    approved BOOLEAN NOT NULL DEFAULT FALSE,
     last_active DATETIME,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Audio messages table
 CREATE TABLE IF NOT EXISTS audio_messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_user_id INTEGER NOT NULL,
+    id TEXT PRIMARY KEY,
+    sender_user_id TEXT NOT NULL,
     file_path TEXT NOT NULL,
     duration INTEGER NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS audio_messages (
 -- Audio message receipts table
 CREATE TABLE IF NOT EXISTS audio_message_receipts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    audio_message_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    audio_message_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (audio_message_id) REFERENCES audio_messages(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

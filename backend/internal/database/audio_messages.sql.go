@@ -10,19 +10,25 @@ import (
 )
 
 const createAudioMessage = `-- name: CreateAudioMessage :one
-INSERT INTO audio_messages (sender_user_id, file_path, duration)
-VALUES (?, ?, ?)
+INSERT INTO audio_messages (id, sender_user_id, file_path, duration)
+VALUES (?, ?, ?, ?)
 RETURNING id, sender_user_id, file_path, duration, created_at, deleted_at
 `
 
 type CreateAudioMessageParams struct {
-	SenderUserID int64  `json:"sender_user_id"`
+	ID           string `json:"id"`
+	SenderUserID string `json:"sender_user_id"`
 	FilePath     string `json:"file_path"`
 	Duration     int64  `json:"duration"`
 }
 
 func (q *Queries) CreateAudioMessage(ctx context.Context, arg CreateAudioMessageParams) (AudioMessage, error) {
-	row := q.db.QueryRowContext(ctx, createAudioMessage, arg.SenderUserID, arg.FilePath, arg.Duration)
+	row := q.db.QueryRowContext(ctx, createAudioMessage,
+		arg.ID,
+		arg.SenderUserID,
+		arg.FilePath,
+		arg.Duration,
+	)
 	var i AudioMessage
 	err := row.Scan(
 		&i.ID,
@@ -40,7 +46,7 @@ DELETE FROM audio_messages
 WHERE id = ?
 `
 
-func (q *Queries) DeleteAudioMessage(ctx context.Context, id int64) error {
+func (q *Queries) DeleteAudioMessage(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deleteAudioMessage, id)
 	return err
 }
@@ -90,7 +96,7 @@ SELECT id, sender_user_id, file_path, duration, created_at, deleted_at FROM audi
 WHERE id = ? AND deleted_at IS NULL
 `
 
-func (q *Queries) GetAudioMessage(ctx context.Context, id int64) (AudioMessage, error) {
+func (q *Queries) GetAudioMessage(ctx context.Context, id string) (AudioMessage, error) {
 	row := q.db.QueryRowContext(ctx, getAudioMessage, id)
 	var i AudioMessage
 	err := row.Scan(
@@ -116,7 +122,7 @@ WHERE am.deleted_at IS NULL
     (
       SELECT COUNT(DISTINCT u.id)
       FROM users u
-      WHERE u.approved = 1
+      WHERE u.approved = TRUE
     ) = (
       SELECT COUNT(*)
       FROM audio_message_receipts amr
@@ -197,7 +203,7 @@ WHERE sender_user_id = ? AND deleted_at IS NULL
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListAudioMessagesBySender(ctx context.Context, senderUserID int64) ([]AudioMessage, error) {
+func (q *Queries) ListAudioMessagesBySender(ctx context.Context, senderUserID string) ([]AudioMessage, error) {
 	rows, err := q.db.QueryContext(ctx, listAudioMessagesBySender, senderUserID)
 	if err != nil {
 		return nil, err
@@ -233,7 +239,7 @@ SET deleted_at = CURRENT_TIMESTAMP
 WHERE id = ?
 `
 
-func (q *Queries) SoftDeleteAudioMessage(ctx context.Context, id int64) error {
+func (q *Queries) SoftDeleteAudioMessage(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, softDeleteAudioMessage, id)
 	return err
 }

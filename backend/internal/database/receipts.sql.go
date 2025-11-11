@@ -15,7 +15,7 @@ FROM audio_message_receipts
 WHERE audio_message_id = ?
 `
 
-func (q *Queries) CountReceiptsByMessage(ctx context.Context, audioMessageID int64) (int64, error) {
+func (q *Queries) CountReceiptsByMessage(ctx context.Context, audioMessageID string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countReceiptsByMessage, audioMessageID)
 	var count int64
 	err := row.Scan(&count)
@@ -29,8 +29,8 @@ RETURNING id, audio_message_id, user_id, received_at
 `
 
 type CreateReceiptParams struct {
-	AudioMessageID int64 `json:"audio_message_id"`
-	UserID         int64 `json:"user_id"`
+	AudioMessageID string `json:"audio_message_id"`
+	UserID         string `json:"user_id"`
 }
 
 func (q *Queries) CreateReceipt(ctx context.Context, arg CreateReceiptParams) (AudioMessageReceipt, error) {
@@ -51,8 +51,8 @@ WHERE audio_message_id = ? AND user_id = ?
 `
 
 type GetReceiptParams struct {
-	AudioMessageID int64 `json:"audio_message_id"`
-	UserID         int64 `json:"user_id"`
+	AudioMessageID string `json:"audio_message_id"`
+	UserID         string `json:"user_id"`
 }
 
 func (q *Queries) GetReceipt(ctx context.Context, arg GetReceiptParams) (AudioMessageReceipt, error) {
@@ -116,7 +116,7 @@ WHERE audio_message_id = ?
 ORDER BY received_at DESC
 `
 
-func (q *Queries) ListReceiptsByMessage(ctx context.Context, audioMessageID int64) ([]AudioMessageReceipt, error) {
+func (q *Queries) ListReceiptsByMessage(ctx context.Context, audioMessageID string) ([]AudioMessageReceipt, error) {
 	rows, err := q.db.QueryContext(ctx, listReceiptsByMessage, audioMessageID)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ WHERE user_id = ?
 ORDER BY received_at DESC
 `
 
-func (q *Queries) ListReceiptsByUser(ctx context.Context, userID int64) ([]AudioMessageReceipt, error) {
+func (q *Queries) ListReceiptsByUser(ctx context.Context, userID string) ([]AudioMessageReceipt, error) {
 	rows, err := q.db.QueryContext(ctx, listReceiptsByUser, userID)
 	if err != nil {
 		return nil, err

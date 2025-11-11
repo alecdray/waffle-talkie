@@ -10,8 +10,8 @@ import (
 )
 
 type AudioMessage struct {
-	ID           int64        `json:"id"`
-	SenderUserID int64        `json:"sender_user_id"`
+	ID           string       `json:"id"`
+	SenderUserID string       `json:"sender_user_id"`
 	FilePath     string       `json:"file_path"`
 	Duration     int64        `json:"duration"`
 	CreatedAt    time.Time    `json:"created_at"`
@@ -20,16 +20,16 @@ type AudioMessage struct {
 
 type AudioMessageReceipt struct {
 	ID             int64     `json:"id"`
-	AudioMessageID int64     `json:"audio_message_id"`
-	UserID         int64     `json:"user_id"`
+	AudioMessageID string    `json:"audio_message_id"`
+	UserID         string    `json:"user_id"`
 	ReceivedAt     time.Time `json:"received_at"`
 }
 
 type User struct {
-	ID         int64        `json:"id"`
+	ID         string       `json:"id"`
 	Name       string       `json:"name"`
 	DeviceID   string       `json:"device_id"`
-	Approved   int64        `json:"approved"`
+	Approved   bool         `json:"approved"`
 	LastActive sql.NullTime `json:"last_active"`
 	CreatedAt  time.Time    `json:"created_at"`
 }

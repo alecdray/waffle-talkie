@@ -1,6 +1,6 @@
 -- name: CreateUser :one
-INSERT INTO users (name, device_id, approved)
-VALUES (?, ?, ?)
+INSERT INTO users (id, name, device_id, approved)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetUser :one
@@ -17,12 +17,12 @@ ORDER BY created_at DESC;
 
 -- name: ListApprovedUsers :many
 SELECT * FROM users
-WHERE approved = 1
+WHERE approved = TRUE
 ORDER BY created_at DESC;
 
 -- name: ApproveUser :exec
 UPDATE users
-SET approved = 1
+SET approved = TRUE
 WHERE id = ?;
 
 -- name: UpdateUserLastActive :exec

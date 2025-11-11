@@ -1,6 +1,6 @@
 -- name: CreateAudioMessage :one
-INSERT INTO audio_messages (sender_user_id, file_path, duration)
-VALUES (?, ?, ?)
+INSERT INTO audio_messages (id, sender_user_id, file_path, duration)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetAudioMessage :one
@@ -47,7 +47,7 @@ WHERE am.deleted_at IS NULL
     (
       SELECT COUNT(DISTINCT u.id)
       FROM users u
-      WHERE u.approved = 1
+      WHERE u.approved = TRUE
     ) = (
       SELECT COUNT(*)
       FROM audio_message_receipts amr

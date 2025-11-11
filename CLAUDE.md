@@ -6,8 +6,10 @@
 - See README.md in project root
 
 # Code style
-- n/a
+- All functions should have docstrings that are clear concise and only explain what is not apparent in the code.
+- Only use inline comments to provide additional context or explain complex logic that is not immediately obvious from the code.
 
 # Workflow
 - Check for reusable code before writing new code
 - Prefer simplicity over abstraction and performance
+- Ensure that existing comments and docstrings are updated to reflect changes in the codebase

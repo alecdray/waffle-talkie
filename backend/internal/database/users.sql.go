@@ -11,29 +11,35 @@ import (
 
 const approveUser = `-- name: ApproveUser :exec
 UPDATE users
-SET approved = 1
+SET approved = TRUE
 WHERE id = ?
 `
 
-func (q *Queries) ApproveUser(ctx context.Context, id int64) error {
+func (q *Queries) ApproveUser(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, approveUser, id)
 	return err
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, device_id, approved)
-VALUES (?, ?, ?)
+INSERT INTO users (id, name, device_id, approved)
+VALUES (?, ?, ?, ?)
 RETURNING id, name, device_id, approved, last_active, created_at
 `
 
 type CreateUserParams struct {
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	DeviceID string `json:"device_id"`
-	Approved int64  `json:"approved"`
+	Approved bool   `json:"approved"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.DeviceID, arg.Approved)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.ID,
+		arg.Name,
+		arg.DeviceID,
+		arg.Approved,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -51,7 +57,7 @@ DELETE FROM users
 WHERE id = ?
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
+func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, id)
 	return err
 }
@@ -61,7 +67,7 @@ SELECT id, name, device_id, approved, last_active, created_at FROM users
 WHERE id = ?
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
+func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i User
 	err := row.Scan(
@@ -96,7 +102,7 @@ func (q *Queries) GetUserByDeviceID(ctx context.Context, deviceID string) (User,
 
 const listApprovedUsers = `-- name: ListApprovedUsers :many
 SELECT id, name, device_id, approved, last_active, created_at FROM users
-WHERE approved = 1
+WHERE approved = TRUE
 ORDER BY created_at DESC
 `
 
@@ -171,7 +177,7 @@ SET last_active = CURRENT_TIMESTAMP
 WHERE id = ?
 `
 
-func (q *Queries) UpdateUserLastActive(ctx context.Context, id int64) error {
+func (q *Queries) UpdateUserLastActive(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, updateUserLastActive, id)
 	return err
 }

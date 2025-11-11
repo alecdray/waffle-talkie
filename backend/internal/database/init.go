@@ -9,9 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// InitDB initializes the database connection and runs migrations
+// InitDB creates the database file if needed, applies schema, and returns queries.
 func InitDB(dbPath string) (*sql.DB, *Queries, error) {
-	// Create database file if it doesn't exist
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		slog.Info("creating new database file", "path", dbPath)
 		file, err := os.Create(dbPath)
@@ -21,46 +20,42 @@ func InitDB(dbPath string) (*sql.DB, *Queries, error) {
 		file.Close()
 	}
 
-	// Open database connection
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Test connection
 	if err := db.Ping(); err != nil {
 		return nil, nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	// Run migrations
 	if err := runMigrations(db); err != nil {
 		return nil, nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	slog.Info("database initialized successfully", "path", dbPath)
 
-	// Create and return Queries instance
 	queries := New(db)
 	return db, queries, nil
 }
 
-// runMigrations executes the schema migrations
+// runMigrations applies the database schema using CREATE TABLE IF NOT EXISTS.
 func runMigrations(db *sql.DB) error {
 	schema := `
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     device_id TEXT NOT NULL UNIQUE,
-    approved INTEGER NOT NULL DEFAULT 0,
+    approved BOOLEAN NOT NULL DEFAULT FALSE,
     last_active DATETIME,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Audio messages table
 CREATE TABLE IF NOT EXISTS audio_messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_user_id INTEGER NOT NULL,
+    id TEXT PRIMARY KEY,
+    sender_user_id TEXT NOT NULL,
     file_path TEXT NOT NULL,
     duration INTEGER NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,8 +66,8 @@ CREATE TABLE IF NOT EXISTS audio_messages (
 -- Audio message receipts table
 CREATE TABLE IF NOT EXISTS audio_message_receipts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    audio_message_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    audio_message_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (audio_message_id) REFERENCES audio_messages(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
