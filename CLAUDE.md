@@ -13,3 +13,4 @@
 - Check for reusable code before writing new code
 - Prefer simplicity over abstraction and performance
 - Ensure that existing comments and docstrings are updated to reflect changes in the codebase
+- Ensure that all README files are up to date and accurate after making changes in the codebase
