@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/alecdray/waffle-talkie/internal/config"
+	"github.com/alecdray/waffle-talkie/internal/database"
 	"github.com/alecdray/waffle-talkie/internal/server"
 )
 
@@ -14,10 +15,18 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	mux := server.NewServerMux()
+	// Initialize database
+	db, queries, err := database.InitDB(config.Config.DatabasePath)
+	if err != nil {
+		slog.Error("failed to initialize database", "error", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	mux := server.NewServerMux(queries)
 	serverAddress := fmt.Sprintf("%s:%s", "", config.Config.Port)
 	slog.Info("starting server", "address", serverAddress)
-	err := http.ListenAndServe(serverAddress, mux)
+	err = http.ListenAndServe(serverAddress, mux)
 	if err != nil {
 		slog.Error("failed to start server", "error", err)
 		return

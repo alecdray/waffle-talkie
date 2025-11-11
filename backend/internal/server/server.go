@@ -3,9 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/alecdray/waffle-talkie/internal/database"
 )
 
-func NewServerMux() http.Handler {
+func NewServerMux(queries *database.Queries) http.Handler {
 	rootMux := http.NewServeMux()
 
 	rootMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
