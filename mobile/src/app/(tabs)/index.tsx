@@ -1,7 +1,4 @@
-import {
-  useAudioPlayer,
-  useAudioPlayerStatus,
-} from "expo-audio";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,9 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { downloadAudio, getMessages, markMessageReceived } from "@/src/api/audio";
+import { getMessages } from "@/src/api/audio";
 import { useAuth } from "@/src/hooks/use-auth";
 import { AudioMessage } from "@/src/types/audio";
+import { getAudioUri } from "@/src/utils/audioStorage";
 
 export default function Index() {
   const { auth } = useAuth();
@@ -23,6 +21,9 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [playedMessageIds, setPlayedMessageIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
@@ -69,15 +70,14 @@ export default function Index() {
         return;
       }
 
-      const audioUrl = downloadAudio(message.id, auth.token);
-      player.replace(audioUrl);
+      const audioUri = await getAudioUri(message.id, auth.token);
+      player.replace(audioUri);
       player.play();
       setPlayingMessageId(message.id);
 
-      await markMessageReceived(message.id, auth.token);
-
-      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+      setPlayedMessageIds((prev) => new Set(prev).add(message.id));
     } catch (error) {
+      console.error(error);
       Alert.alert("Error", "Failed to play message");
     }
   };
@@ -90,7 +90,7 @@ export default function Index() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60),
     );
 
     if (diffInHours < 1) {
@@ -110,22 +110,37 @@ export default function Index() {
 
   const renderMessage = ({ item }: { item: AudioMessage }) => {
     const isPlaying = playingMessageId === item.id && playerStatus.playing;
+    const isPlayed = playedMessageIds.has(item.id);
 
     return (
       <TouchableOpacity
-        style={[styles.messageCard, isPlaying && styles.messageCardPlaying]}
+        style={[
+          styles.messageCard,
+          isPlaying && styles.messageCardPlaying,
+          isPlayed && styles.messageCardPlayed,
+        ]}
         onPress={() => handlePlayMessage(item)}
       >
         <View style={styles.messageHeader}>
-          <View style={styles.playIconContainer}>
+          <View
+            style={[
+              styles.playIconContainer,
+              isPlayed && styles.playIconContainerPlayed,
+            ]}
+          >
             <Text style={styles.playIcon}>{isPlaying ? "⏸" : "▶️"}</Text>
           </View>
           <View style={styles.messageInfo}>
-            <Text style={styles.messageDuration}>
+            <Text
+              style={[styles.messageDuration, isPlayed && styles.textPlayed]}
+            >
               {formatDuration(item.duration)}
             </Text>
-            <Text style={styles.messageDate}>{formatDate(item.created_at)}</Text>
+            <Text style={[styles.messageDate, isPlayed && styles.textPlayed]}>
+              {formatDate(item.created_at)}
+            </Text>
           </View>
+          {isPlayed && <Text style={styles.playedBadge}>✓</Text>}
         </View>
         {isPlaying && (
           <View style={styles.playingIndicator}>
@@ -144,14 +159,20 @@ export default function Index() {
     );
   }
 
+  const unplayedCount = messages.filter(
+    (m) => !playedMessageIds.has(m.id),
+  ).length;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.subtitle}>
-          {messages.length === 0
-            ? "No new messages"
-            : `${messages.length} new ${messages.length === 1 ? "message" : "messages"}`}
+          {unplayedCount === 0
+            ? messages.length === 0
+              ? "No messages"
+              : "No new messages"
+            : `${unplayedCount} new ${unplayedCount === 1 ? "message" : "messages"}`}
         </Text>
       </View>
 
@@ -241,6 +262,9 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
     backgroundColor: "#E8F4FD",
   },
+  messageCardPlayed: {
+    opacity: 0.6,
+  },
   messageHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -253,6 +277,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+  },
+  playIconContainerPlayed: {
+    backgroundColor: "#8E8E93",
   },
   playIcon: {
     fontSize: 20,
@@ -268,6 +295,14 @@ const styles = StyleSheet.create({
   messageDate: {
     fontSize: 14,
     color: "#666",
+  },
+  textPlayed: {
+    color: "#999",
+  },
+  playedBadge: {
+    fontSize: 20,
+    color: "#8E8E93",
+    marginLeft: 8,
   },
   playingIndicator: {
     marginTop: 12,

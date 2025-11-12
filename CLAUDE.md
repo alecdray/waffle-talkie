@@ -10,6 +10,7 @@
 - Only use inline comments to provide additional context or explain complex logic that is not immediately obvious from the code.
 
 # Workflow
+- Check README.md files for project information and guidelines.
 - Check for reusable code before writing new code
 - Prefer simplicity over abstraction and performance
 - Ensure that existing comments and docstrings are updated to reflect changes in the codebase
