@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,11 +15,11 @@ export default function WaitingScreen() {
   const { auth, login, logout } = useAuth();
   const router = useRouter();
 
-  const handleCheckStatus = useCallback(async () => {
+  const handleCheckStatus = async () => {
     try {
       setIsChecking(true);
       await login();
-      router.replace("/(tabs)");
+      router.replace("/app");
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("not approved")) {
@@ -33,11 +33,7 @@ export default function WaitingScreen() {
     } finally {
       setIsChecking(false);
     }
-  }, [login, router]);
-
-  useEffect(() => {
-    handleCheckStatus();
-  }, [handleCheckStatus]);
+  };
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [

@@ -15,7 +15,8 @@ function RootNavigator() {
     );
   }
 
-  if (!auth) {
+  const isRegistered = !!auth;
+  if (!isRegistered) {
     return (
       <Stack>
         <Stack.Screen
@@ -26,7 +27,8 @@ function RootNavigator() {
     );
   }
 
-  if (!auth.approved || !auth.token) {
+  const isApproved = auth.approved && !!auth.token;
+  if (!isApproved) {
     return (
       <Stack>
         <Stack.Screen
@@ -39,7 +41,7 @@ function RootNavigator() {
 
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="app" options={{ headerShown: false }} />
     </Stack>
   );
 }

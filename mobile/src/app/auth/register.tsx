@@ -7,14 +7,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "../../hooks/use-auth";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register } = useAuth();
+  const { register, login, auth } = useAuth();
   const router = useRouter();
+
+  if (auth) return <Redirect href="/auth/waiting" />;
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -25,11 +27,14 @@ export default function RegisterScreen() {
     try {
       setIsSubmitting(true);
       await register(name);
-      router.replace("/auth/waiting");
+      await login().catch(() => {});
+      console.log("Registration successful");
+      console.log("Redirecting to home page");
+      router.replace("/app");
     } catch (error) {
       Alert.alert(
         "Registration Failed",
-        (error as Error).message || "Failed to register"
+        (error as Error).message || "Failed to register",
       );
     } finally {
       setIsSubmitting(false);
