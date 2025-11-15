@@ -1,17 +1,34 @@
 import { useRouter } from "expo-router";
-import {
-  Alert,
-  Button,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "@/src/hooks/use-auth";
+import { clearAllAudioFiles } from "@/src/utils/audioStorage";
 
 export default function Settings() {
   const { auth, logout } = useAuth();
   const router = useRouter();
+
+  const handleClearAudioCache = () => {
+    Alert.alert(
+      "Clear Audio Cache",
+      "Are you sure you want to delete all downloaded audio messages? They will need to be re-downloaded when you refresh.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearAllAudioFiles();
+              Alert.alert("Success", "All audio messages have been deleted");
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "Failed to delete audio messages");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -49,6 +66,13 @@ export default function Settings() {
           </Text>
         </View>
 
+        <TouchableOpacity
+          style={styles.clearCacheButton}
+          onPress={handleClearAudioCache}
+        >
+          <Text style={styles.clearCacheText}>Clear Audio Cache</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -83,8 +107,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#000",
   },
-  logoutButton: {
+  clearCacheButton: {
     marginTop: 32,
+    backgroundColor: "#FF9500",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  clearCacheText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  logoutButton: {
+    marginTop: 16,
     backgroundColor: "#FF3B30",
     borderRadius: 8,
     padding: 16,
