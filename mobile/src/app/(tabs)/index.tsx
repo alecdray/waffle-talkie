@@ -10,20 +10,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { getMessages } from "@/src/api/audio";
 import { useAuth } from "@/src/hooks/use-auth";
-import { AudioMessage } from "@/src/types/audio";
-import { getAudioUri } from "@/src/utils/audioStorage";
+import {
+  getStoredMessages,
+  prefetchUserAudioMessages,
+} from "@/src/utils/audioStorage";
+import { File } from "expo-file-system";
 
 export default function Index() {
   const { auth } = useAuth();
-  const [messages, setMessages] = useState<AudioMessage[]>([]);
+  const [messages, setMessages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
-  const [playedMessageIds, setPlayedMessageIds] = useState<Set<string>>(
-    new Set(),
-  );
 
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
@@ -38,9 +37,11 @@ export default function Index() {
         setIsLoading(true);
       }
 
-      const fetchedMessages = await getMessages(auth.token);
-      setMessages(fetchedMessages);
+      await prefetchUserAudioMessages(auth.token);
+      const storedMessages = getStoredMessages();
+      setMessages(storedMessages);
     } catch (error) {
+      console.error(error);
       Alert.alert("Error", "Failed to fetch messages");
     } finally {
       setIsLoading(false);
@@ -61,21 +62,23 @@ export default function Index() {
     }
   }, [playerStatus.playing, playingMessageId]);
 
-  const handlePlayMessage = async (message: AudioMessage) => {
+  const handlePlayMessage = async (message: File) => {
     if (!auth?.token) return;
 
     try {
-      if (playingMessageId === message.id && playerStatus.playing) {
+      if (playingMessageId === message.uri && playerStatus.playing) {
         player.pause();
         return;
       }
 
-      const audioUri = await getAudioUri(message.id, auth.token);
+      const audioUri = message.uri;
+      if (!audioUri) {
+        Alert.alert("Error", "Audio file not found");
+        return;
+      }
       player.replace(audioUri);
       player.play();
-      setPlayingMessageId(message.id);
-
-      setPlayedMessageIds((prev) => new Set(prev).add(message.id));
+      setPlayingMessageId(message.uri);
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to play message");
@@ -86,8 +89,9 @@ export default function Index() {
     fetchMessages(true);
   }, []);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (epochMs: number | null) => {
+    if (!epochMs) return "Unknown";
+    const date = new Date(epochMs);
     const now = new Date();
     const diffInHours = Math.floor(
       (now.getTime() - date.getTime()) / (1000 * 60 * 60),
@@ -108,9 +112,9 @@ export default function Index() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const renderMessage = ({ item }: { item: AudioMessage }) => {
-    const isPlaying = playingMessageId === item.id && playerStatus.playing;
-    const isPlayed = playedMessageIds.has(item.id);
+  const renderMessage = ({ item }: { item: File }) => {
+    const isPlaying = playingMessageId === item.uri && playerStatus.playing;
+    const isPlayed = false;
 
     return (
       <TouchableOpacity
@@ -131,13 +135,13 @@ export default function Index() {
             <Text style={styles.playIcon}>{isPlaying ? "⏸" : "▶️"}</Text>
           </View>
           <View style={styles.messageInfo}>
-            <Text
+            {/*<Text
               style={[styles.messageDuration, isPlayed && styles.textPlayed]}
             >
-              {formatDuration(item.duration)}
-            </Text>
+              {formatDuration((item.info().size ?? 0))}
+            </Text>*/}
             <Text style={[styles.messageDate, isPlayed && styles.textPlayed]}>
-              {formatDate(item.created_at)}
+              {formatDate(item.creationTime)}
             </Text>
           </View>
           {isPlayed && <Text style={styles.playedBadge}>✓</Text>}
@@ -159,27 +163,19 @@ export default function Index() {
     );
   }
 
-  const unplayedCount = messages.filter(
-    (m) => !playedMessageIds.has(m.id),
-  ).length;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.subtitle}>
-          {unplayedCount === 0
-            ? messages.length === 0
-              ? "No messages"
-              : "No new messages"
-            : `${unplayedCount} new ${unplayedCount === 1 ? "message" : "messages"}`}
+          {messages.length === 0 ? "No messages" : "You have messages"}
         </Text>
       </View>
 
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.uri}
         contentContainerStyle={
           messages.length === 0 ? styles.emptyContainer : styles.listContainer
         }
