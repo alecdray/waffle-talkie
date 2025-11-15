@@ -4,7 +4,10 @@ import React from "react";
 
 export default function TabLayout() {
   const { auth } = useAuth();
-  if (!auth?.token) return <Redirect href="/auth/register" />;
+
+  if (!auth?.token) {
+    return <Redirect href="/auth" />;
+  }
 
   return (
     <Tabs

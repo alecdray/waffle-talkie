@@ -39,7 +39,7 @@ export default function Settings() {
         style: "destructive",
         onPress: async () => {
           await logout();
-          router.replace("/auth/register");
+          router.replace("/auth");
         },
       },
     ]);

@@ -1,49 +1,16 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "../hooks/use-auth";
 import { UserDataProvider } from "../hooks/use-user-data";
 
 function RootNavigator() {
-  const { auth, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return null;
   }
 
-  const isRegistered = !!auth;
-  if (!isRegistered) {
-    return (
-      <Stack>
-        <Stack.Screen
-          name="auth/register"
-          options={{ title: "Register", headerShown: false }}
-        />
-      </Stack>
-    );
-  }
-
-  const isApproved = auth.approved && !!auth.token;
-  if (!isApproved) {
-    return (
-      <Stack>
-        <Stack.Screen
-          name="auth/waiting"
-          options={{ title: "Pending Approval", headerShown: false }}
-        />
-      </Stack>
-    );
-  }
-
-  return (
-    <Stack>
-      <Stack.Screen name="app" options={{ headerShown: false }} />
-    </Stack>
-  );
+  return <Stack></Stack>;
 }
 
 export default function RootLayout() {

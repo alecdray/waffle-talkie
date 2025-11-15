@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "../../hooks/use-auth";
 
 export default function WaitingScreen() {
@@ -20,7 +20,7 @@ export default function WaitingScreen() {
     try {
       setIsChecking(true);
       await login();
-      router.replace("/app");
+      router.replace("/");
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("not approved")) {
@@ -44,11 +44,15 @@ export default function WaitingScreen() {
         style: "destructive",
         onPress: async () => {
           await logout();
-          router.replace("/auth/register");
+          router.replace("/");
         },
       },
     ]);
   };
+
+  if (!auth) {
+    return <Redirect href="/auth" />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
