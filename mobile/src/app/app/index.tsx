@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
 import {
   getStoredMessages,
@@ -157,14 +158,14 @@ export default function Index() {
 
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
+      <SafeAreaView style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.subtitle}>
@@ -192,7 +193,7 @@ export default function Index() {
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

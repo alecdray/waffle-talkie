@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../hooks/use-auth";
 
@@ -50,7 +51,7 @@ export default function WaitingScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>⏳</Text>
@@ -88,7 +89,7 @@ export default function WaitingScreen() {
           }
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

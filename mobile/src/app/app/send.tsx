@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { uploadAudio } from "@/src/api/audio";
 import { useAuth } from "@/src/hooks/use-auth";
 
@@ -107,7 +108,7 @@ export default function Send() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Send Audio Message</Text>
 
@@ -180,7 +181,7 @@ export default function Send() {
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

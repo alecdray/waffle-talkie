@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "../../hooks/use-auth";
 
@@ -42,7 +43,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to Waffle Talkie</Text>
         <Text style={styles.subtitle}>Enter your name to get started</Text>
@@ -72,7 +73,7 @@ export default function RegisterScreen() {
           you can use the app.
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
