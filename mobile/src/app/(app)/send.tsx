@@ -17,11 +17,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { uploadAudio } from "@/src/api/audio";
 import { useAuth } from "@/src/hooks/use-auth";
+import { useClient } from "@/src/hooks/use-client";
 
 export default function Send() {
   const { auth } = useAuth();
+  const { api } = useClient();
   const [isUploading, setIsUploading] = useState(false);
   const [hasRecording, setHasRecording] = useState(false);
 
@@ -60,7 +61,7 @@ export default function Send() {
     try {
       setIsUploading(true);
       const duration = Math.floor(recorderState.durationMillis / 1000);
-      await uploadAudio(audioRecorder.uri, duration, auth.token);
+      await api.audio.uploadAudio(audioRecorder.uri, duration);
 
       Alert.alert("Success", "Audio message sent!");
       setHasRecording(false);
@@ -167,7 +168,10 @@ export default function Send() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.sendButton, isUploading && styles.buttonDisabled]}
+                style={[
+                  styles.sendButton,
+                  isUploading && styles.buttonDisabled,
+                ]}
                 onPress={handleSend}
                 disabled={isUploading}
               >

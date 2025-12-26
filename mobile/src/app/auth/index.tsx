@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -14,8 +14,14 @@ import { useAuth } from "../../hooks/use-auth";
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, login } = useAuth();
+  const { register, login, auth } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (auth?.userId && !auth?.approved) {
+      router.replace("/auth/waiting");
+    }
+  }, [auth, router]);
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -26,7 +32,7 @@ export default function RegisterScreen() {
     try {
       setIsSubmitting(true);
       await register(name);
-      await login().catch(() => {});
+      await login().catch((err) => {});
       router.replace("/");
     } catch (error) {
       Alert.alert(

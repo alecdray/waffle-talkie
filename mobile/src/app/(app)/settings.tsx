@@ -2,10 +2,11 @@ import { useRouter } from "expo-router";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
-import { clearAllAudioFiles } from "@/src/utils/audioStorage";
+import { useAudio } from "@/src/hooks/use-audio";
 
 export default function Settings() {
   const { auth, logout } = useAuth();
+  const { clearAllAudioFiles } = useAudio();
   const router = useRouter();
 
   const handleClearAudioCache = () => {

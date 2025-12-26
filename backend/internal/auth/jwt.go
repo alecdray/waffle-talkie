@@ -1,10 +1,16 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+)
+
+var (
+	ErrTokenExpired = errors.New("expired token")
+	ErrTokenInvalid = errors.New("invalid token")
 )
 
 // Claims contains the JWT token payload with user identity.
@@ -46,11 +52,15 @@ func ValidateToken(tokenString string, secretKey string) (*Claims, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse token: %w", err)
+		tokenErr := ErrTokenInvalid
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			tokenErr = ErrTokenExpired
+		}
+		return nil, fmt.Errorf("%w: %w", tokenErr, err)
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("invalid token")
+		return nil, ErrTokenInvalid
 	}
 
 	return claims, nil

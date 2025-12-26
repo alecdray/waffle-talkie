@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import {
   AudioMessage,
   MarkReceivedRequest,
@@ -5,73 +6,75 @@ import {
   MessagesResponse,
   UploadAudioResponse,
 } from "../types/audio";
+import { ApiClient } from "./client";
 import { API_URL, createHeaders } from "./config";
 
-export const uploadAudio = async (
-  audioUri: string,
-  duration: number,
-  token: string
-): Promise<UploadAudioResponse> => {
-  const formData = new FormData();
+export class AudioClient {
+  constructor(private api: ApiClient) {}
 
-  const audioBlob = {
-    uri: audioUri,
-    type: "audio/m4a",
-    name: "audio.m4a",
-  } as any;
+  uploadAudio = async (
+    audioUri: string,
+    duration: number,
+  ): Promise<UploadAudioResponse> => {
+    const formData = new FormData();
 
-  formData.append("audio", audioBlob);
-  formData.append("duration", duration.toString());
+    const audioBlob = {
+      uri: audioUri,
+      type: "audio/m4a",
+      name: "audio.m4a",
+    } as any;
 
-  const response = await fetch(`${API_URL}/api/messages/upload`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+    formData.append("audio", audioBlob);
+    formData.append("duration", duration.toString());
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Upload failed");
-  }
+    const response = await this.api.fetchJson<UploadAudioResponse>(
+      "/api/messages/upload",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
 
-  return response.json();
-};
+    return response;
+  };
 
-export const getMessages = async (token: string): Promise<AudioMessage[]> => {
-  const response = await fetch(`${API_URL}/api/messages`, {
-    method: "GET",
-    headers: createHeaders(token),
-  });
+  getMessages = async (): Promise<AudioMessage[]> => {
+    const response = await this.api.fetchJson<MessagesResponse>(
+      "/api/messages",
+      {
+        method: "GET",
+      },
+    );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Failed to fetch messages");
-  }
+    return response.messages;
+  };
 
-  const data: MessagesResponse = await response.json();
-  return data.messages;
-};
+  downloadAndSaveAudio = async (
+    messageId: string,
+    file: File,
+  ): Promise<string> => {
+    const downloadUrl = `${API_URL}/api/messages/download?id=${messageId}`;
 
-export const downloadAudio = (messageId: string, token: string): string => {
-  return `${API_URL}/api/messages/download?id=${messageId}`;
-};
+    const downloadedFile = await File.downloadFileAsync(downloadUrl, file, {
+      headers: {
+        Authorization: `Bearer ${this.api.token}`,
+      },
+    });
 
-export const markMessageReceived = async (
-  messageId: string,
-  token: string
-): Promise<MarkReceivedResponse> => {
-  const response = await fetch(`${API_URL}/api/messages/received`, {
-    method: "POST",
-    headers: createHeaders(token),
-    body: JSON.stringify({ message_id: messageId }),
-  });
+    return downloadedFile.uri;
+  };
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Failed to mark message as received");
-  }
+  markMessageReceived = async (
+    messageId: string,
+  ): Promise<MarkReceivedResponse> => {
+    const response = await this.api.fetchJson<MarkReceivedResponse>(
+      "/api/messages/received",
+      {
+        method: "POST",
+        body: JSON.stringify({ message_id: messageId }),
+      },
+    );
 
-  return response.json();
-};
+    return response;
+  };
+}

@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "../../hooks/use-auth";
+import { ClientError } from "@/src/api/client";
 
 export default function WaitingScreen() {
   const [isChecking, setIsChecking] = useState(false);
@@ -22,14 +23,17 @@ export default function WaitingScreen() {
       await login();
       router.replace("/");
     } catch (error) {
-      const errorMessage = (error as Error).message;
-      if (errorMessage.includes("not approved")) {
+      if (ClientError.isClientError(error) && error.isForbidden()) {
         Alert.alert(
           "Not Approved Yet",
           "Your account is still pending approval. Please try again later.",
         );
       } else {
-        Alert.alert("Error", errorMessage || "Failed to check status");
+        let message = "Failed to check status";
+        if (error instanceof Error) {
+          message = error.message;
+        }
+        Alert.alert("Error", message);
       }
     } finally {
       setIsChecking(false);

@@ -12,14 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
-import {
-  getStoredMessages,
-  prefetchUserAudioMessages,
-} from "@/src/utils/audioStorage";
 import { File } from "expo-file-system";
+import { useAudio } from "@/src/hooks/use-audio";
 
 export default function Index() {
   const { auth } = useAuth();
+  const { getStoredMessages, prefetchUserAudioMessages } = useAudio();
   const [messages, setMessages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -38,7 +36,7 @@ export default function Index() {
         setIsLoading(true);
       }
 
-      await prefetchUserAudioMessages(auth.token);
+      await prefetchUserAudioMessages();
       const storedMessages = getStoredMessages();
       setMessages(storedMessages);
     } catch (error) {

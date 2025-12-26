@@ -1,8 +1,9 @@
 import * as Device from "expo-device";
-import { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser } from "../api/auth";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
 import { getStoredJson, storeJson } from "../store/store";
 import { UserAuth } from "../types/auth";
+import { ApiClient } from "../api/client";
 
 const AUTH_STORAGE_KEY = "auth-data" as const;
 
@@ -33,6 +34,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return Device.deviceName || Device.modelId || "unknown-device";
   };
 
+  const api = useMemo(() => {
+    return new ApiClient(auth?.token);
+  }, [auth?.token]);
+
   useEffect(() => {
     getStoredJson<UserAuth>(AUTH_STORAGE_KEY)
       .then((storedAuth) => {
@@ -50,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
 
       const deviceId = getDeviceId();
-      const response = await registerUser({
+      const response = await api.auth.registerUser({
         name,
         device_id: deviceId,
       });
@@ -79,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
 
       const deviceId = getDeviceId();
-      const response = await loginUser({
+      const response = await api.auth.loginUser({
         device_id: deviceId,
       });
 
