@@ -2,6 +2,10 @@
 
 ## In Progress
 
+- [] fix: player state updates
+- [] feat: player message tracking
+- [] feat: delete message after x days
+- [] feat: secure message storage
 
 ## Backlog
 
