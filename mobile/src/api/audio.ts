@@ -49,10 +49,7 @@ export class AudioClient {
     return response.messages;
   };
 
-  downloadAndSaveAudio = async (
-    messageId: string,
-    file: File,
-  ): Promise<string> => {
+  downloadAudio = async (messageId: string, file: File): Promise<string> => {
     const downloadUrl = `${API_URL}/api/messages/download?id=${messageId}`;
 
     const downloadedFile = await File.downloadFileAsync(downloadUrl, file, {

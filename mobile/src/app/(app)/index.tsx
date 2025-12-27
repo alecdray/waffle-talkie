@@ -12,13 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
-import { File } from "expo-file-system";
-import { useAudio } from "@/src/hooks/use-audio";
+import { PlayedStatus, StoredMessage, useAudio } from "@/src/hooks/use-audio";
 
 export default function Index() {
   const { auth } = useAuth();
-  const { getStoredMessages, prefetchUserAudioMessages } = useAudio();
-  const [messages, setMessages] = useState<File[]>([]);
+  const { messages, prefetchUserAudioMessages, updatePlayedStatus } =
+    useAudio();
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -37,8 +36,6 @@ export default function Index() {
       }
 
       await prefetchUserAudioMessages();
-      const storedMessages = getStoredMessages();
-      setMessages(storedMessages);
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to fetch messages");
@@ -61,23 +58,28 @@ export default function Index() {
     }
   }, [playerStatus.playing, playingMessageId]);
 
-  const handlePlayMessage = async (message: File) => {
+  const handlePlayMessage = async (message: StoredMessage) => {
     if (!auth?.token) return;
 
+    const { file, metadata } = message;
+
     try {
-      if (playingMessageId === message.uri && playerStatus.playing) {
+      if (playingMessageId === metadata.id && playerStatus.playing) {
         player.pause();
         return;
       }
 
-      const audioUri = message.uri;
+      const audioUri = file.uri;
       if (!audioUri) {
         Alert.alert("Error", "Audio file not found");
         return;
       }
       player.replace(audioUri);
       player.play();
-      setPlayingMessageId(message.uri);
+      setPlayingMessageId(metadata.id);
+      if (message.metadata.playedStatus === PlayedStatus.UNPLAYED) {
+        await updatePlayedStatus(metadata.id, PlayedStatus.STARTED);
+      }
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to play message");
@@ -111,9 +113,11 @@ export default function Index() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const renderMessage = ({ item }: { item: File }) => {
-    const isPlaying = playingMessageId === item.uri && playerStatus.playing;
-    const isPlayed = false;
+  const renderMessage = ({ item }: { item: StoredMessage }) => {
+    const isPlaying =
+      playingMessageId === item.metadata.id && playerStatus.playing;
+    const isPlayed =
+      !isPlaying && item.metadata.playedStatus !== PlayedStatus.UNPLAYED;
 
     return (
       <TouchableOpacity
@@ -140,7 +144,7 @@ export default function Index() {
               {formatDuration((item.info().size ?? 0))}
             </Text>*/}
             <Text style={[styles.messageDate, isPlayed && styles.textPlayed]}>
-              {formatDate(item.creationTime)}
+              {formatDate(item.file.creationTime)}
             </Text>
           </View>
           {isPlayed && <Text style={styles.playedBadge}>✓</Text>}
@@ -154,7 +158,7 @@ export default function Index() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || !messages) {
     return (
       <SafeAreaView style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -174,7 +178,7 @@ export default function Index() {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(item) => item.uri}
+        keyExtractor={(item) => item.metadata.fileUri}
         contentContainerStyle={
           messages.length === 0 ? styles.emptyContainer : styles.listContainer
         }

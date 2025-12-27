@@ -58,7 +58,6 @@ export class ApiClient {
   }
 
   fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-    console.debug("fetchJson", init?.method || "GET", path);
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
