@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
 import { useClient } from "@/src/hooks/use-client";
+import { BasicProgressBar } from "@/src/components/progress/progress-bar";
 
 export default function Send() {
   const { auth } = useAuth();
@@ -146,6 +147,7 @@ export default function Send() {
                 if (playerStatus.playing) {
                   player.pause();
                 } else {
+                  player.seekTo(0);
                   player.play();
                 }
               }}
@@ -187,45 +189,6 @@ export default function Send() {
         )}
       </View>
     </SafeAreaView>
-  );
-}
-
-function BasicProgressBar({
-  progress,
-  height = 10,
-  color = "#007AFF",
-}: {
-  progress: number;
-  height?: number;
-  color?: string;
-}) {
-  const clampedProgress = Math.min(Math.max(progress, 0), 100);
-
-  return (
-    <View
-      style={[
-        {
-          width: "100%",
-          backgroundColor: "#E5E5E5",
-          borderRadius: 10,
-          overflow: "hidden",
-        },
-        { height },
-      ]}
-    >
-      <View
-        style={[
-          {
-            height: "100%",
-            borderRadius: 10,
-          },
-          {
-            width: `${clampedProgress}%`,
-            backgroundColor: color,
-          },
-        ]}
-      />
-    </View>
   );
 }
 

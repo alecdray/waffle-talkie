@@ -13,6 +13,30 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
 import { PlayedStatus, StoredMessage, useAudio } from "@/src/hooks/use-audio";
+import { BasicProgressBar } from "@/src/components/progress/progress-bar";
+
+const formatDate = (epochMs: number | null) => {
+  if (!epochMs) return "Unknown";
+  const date = new Date(epochMs);
+  const now = new Date();
+  const diffInHours = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60),
+  );
+
+  if (diffInHours < 1) {
+    return "Just now";
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+};
+
+const formatDuration = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};
 
 export default function Index() {
   const { auth } = useAuth();
@@ -20,10 +44,13 @@ export default function Index() {
     useAudio();
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [playingMessage, setPlayingMessage] = useState<StoredMessage | null>(
+    null,
+  );
 
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
+  const playbackPercentage = playerStatus.currentTime / playerStatus.duration;
 
   const fetchMessages = async (isRefresh = false) => {
     if (!auth?.token) return;
@@ -47,77 +74,61 @@ export default function Index() {
 
   useEffect(() => {
     fetchMessages();
-  }, []);
+  });
 
   useEffect(() => {
-    if (!playerStatus.playing && playingMessageId) {
+    if (!playerStatus.playing && playingMessage) {
       const timeoutId = setTimeout(() => {
-        setPlayingMessageId(null);
+        setPlayingMessage(null);
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [playerStatus.playing, playingMessageId]);
+  }, [playerStatus.playing, playingMessage]);
 
-  const handlePlayMessage = async (message: StoredMessage) => {
-    if (!auth?.token) return;
-
-    const { file, metadata } = message;
+  useEffect(() => {
+    if (!playingMessage) return;
 
     try {
-      if (playingMessageId === metadata.id && playerStatus.playing) {
-        player.pause();
-        return;
-      }
-
-      const audioUri = file.uri;
-      if (!audioUri) {
-        Alert.alert("Error", "Audio file not found");
-        return;
-      }
-      player.replace(audioUri);
+      player.replace(playingMessage.file.uri);
       player.play();
-      setPlayingMessageId(metadata.id);
-      if (message.metadata.playedStatus === PlayedStatus.UNPLAYED) {
-        await updatePlayedStatus(metadata.id, PlayedStatus.STARTED);
+      if (playingMessage.metadata.playedStatus === PlayedStatus.UNPLAYED) {
+        updatePlayedStatus(
+          playingMessage.metadata.id,
+          PlayedStatus.STARTED,
+        ).catch((error) => {
+          console.warn(error);
+        });
       }
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to play message");
+      setPlayingMessage(null);
     }
+  }, [playingMessage, player, updatePlayedStatus]);
+
+  const handlePressMessage = async (message: StoredMessage) => {
+    if (!auth?.token) return;
+
+    const { metadata } = message;
+
+    if (playingMessage?.metadata.id === metadata.id && playerStatus.playing) {
+      player.pause();
+      return;
+    }
+    setPlayingMessage(message);
   };
 
   const onRefresh = useCallback(() => {
     fetchMessages(true);
   }, []);
 
-  const formatDate = (epochMs: number | null) => {
-    if (!epochMs) return "Unknown";
-    const date = new Date(epochMs);
-    const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60),
-    );
-
-    if (diffInHours < 1) {
-      return "Just now";
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
   const renderMessage = ({ item }: { item: StoredMessage }) => {
-    const isPlaying =
-      playingMessageId === item.metadata.id && playerStatus.playing;
+    const isOnDeck = playingMessage?.metadata.id === item.metadata.id;
+    const isPlaying = isOnDeck && playerStatus.playing;
     const isPlayed =
       !isPlaying && item.metadata.playedStatus !== PlayedStatus.UNPLAYED;
+
+    const isLoading = isOnDeck && !playerStatus.isLoaded;
 
     return (
       <TouchableOpacity
@@ -126,7 +137,7 @@ export default function Index() {
           isPlaying && styles.messageCardPlaying,
           isPlayed && styles.messageCardPlayed,
         ]}
-        onPress={() => handlePlayMessage(item)}
+        onPress={() => handlePressMessage(item)}
       >
         <View style={styles.messageHeader}>
           <View
@@ -135,7 +146,11 @@ export default function Index() {
               isPlayed && styles.playIconContainerPlayed,
             ]}
           >
-            <Text style={styles.playIcon}>{isPlaying ? "⏸" : "▶️"}</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#666" />
+            ) : (
+              <Text style={styles.playIcon}>{isPlaying ? "⏸" : "▶️"}</Text>
+            )}
           </View>
           <View style={styles.messageInfo}>
             {/*<Text
@@ -150,8 +165,13 @@ export default function Index() {
           {isPlayed && <Text style={styles.playedBadge}>✓</Text>}
         </View>
         {isPlaying && (
-          <View style={styles.playingIndicator}>
-            <Text style={styles.playingText}>Playing...</Text>
+          <View style={styles.progressContainer}>
+            <BasicProgressBar
+              progress={playbackPercentage * 100}
+              textStyle={{ color: "#666", fontSize: 12 }}
+              leftBottomText={formatDuration(playerStatus.currentTime)}
+              rightBottomText={formatDuration(playerStatus.duration)}
+            />
           </View>
         )}
       </TouchableOpacity>
@@ -313,5 +333,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#007AFF",
     fontWeight: "600",
+  },
+  progressContainer: {
+    marginTop: 24,
   },
 });
