@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/alecdray/waffle-talkie/internal/database"
 	"github.com/google/uuid"
@@ -114,10 +115,11 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token   string `json:"token"`
-	UserID  string `json:"user_id"`
-	Name    string `json:"name"`
-	Message string `json:"message,omitempty"`
+	Token          string    `json:"token"`
+	TokenExpiresAt time.Time `json:"token_expires_at"`
+	UserID         string    `json:"user_id"`
+	Name           string    `json:"name"`
+	Message        string    `json:"message,omitempty"`
 }
 
 // HandleLogin authenticates approved users and returns a JWT token.
@@ -167,9 +169,16 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to update last active", "error", err)
 	}
 
-	token, err := GenerateToken(user.ID, h.secretKey)
+	token := GenerateToken(user.ID, h.secretKey)
+	tokenString, err := SignToken(token, h.secretKey)
 	if err != nil {
 		slog.Error("failed to generate token", "error", err)
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+	tokenExpiresAt, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		slog.Error("failed to get token expiration time", "error", err)
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
@@ -177,9 +186,10 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	slog.Info("user logged in", "user_id", user.ID, "name", user.Name)
 
 	resp := LoginResponse{
-		Token:  token,
-		UserID: user.ID,
-		Name:   user.Name,
+		Token:          tokenString,
+		TokenExpiresAt: tokenExpiresAt.Time,
+		UserID:         user.ID,
+		Name:           user.Name,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

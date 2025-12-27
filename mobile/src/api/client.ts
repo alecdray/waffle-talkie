@@ -46,30 +46,35 @@ export class ApiClient {
   token?: string;
   auth: AuthClient;
   audio: AudioClient;
-  errorHandler?: (error: ClientError) => void;
 
-  constructor(token?: string) {
+  constructor({
+    token,
+  }: {
+    token?: string;
+  } = {}) {
     this.token = token;
     this.auth = new AuthClient(this);
     this.audio = new AudioClient(this);
   }
 
   fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+    console.debug("fetchJson", init?.method || "GET", path);
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: { ...createHeaders(this.token), ...init?.headers },
+      headers: {
+        ...createHeaders(this.token),
+        ...init?.headers,
+      },
     });
 
+    let responseBody = await response.text();
     let respJson: Record<string, unknown> | null = null;
     try {
-      respJson = await response.json();
+      respJson = JSON.parse(responseBody);
     } catch {}
 
     if (!response.ok) {
-      let respText: string | null = null;
-      try {
-        respText = await response.text();
-      } catch {}
+      let respText: string = responseBody;
 
       let errorMsg = `failed to fetch ${init?.method || "GET"} ${path} with ${response.status} ${response.statusText}`;
       if (respText) {
@@ -80,7 +85,6 @@ export class ApiClient {
       if (respJson) {
         clientError.withJson(respJson);
       }
-      this.onError(clientError);
       throw clientError;
     }
 
@@ -89,17 +93,5 @@ export class ApiClient {
     }
 
     return respJson as T;
-  };
-
-  setErrorHandler = (handler: (error: ClientError) => void) => {
-    this.errorHandler = handler;
-  };
-
-  onError = (error: ClientError) => {
-    if (this.errorHandler) {
-      this.errorHandler(error);
-    } else {
-      throw error;
-    }
   };
 }

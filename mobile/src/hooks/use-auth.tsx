@@ -1,9 +1,17 @@
 import * as Device from "expo-device";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { getStoredJson, storeJson } from "../store/store";
 import { UserAuth } from "../types/auth";
 import { ApiClient } from "../api/client";
+import { AuthClient } from "../api/auth";
 
 const AUTH_STORAGE_KEY = "auth-data" as const;
 
@@ -12,7 +20,7 @@ interface AuthContextProps {
   isLoading: boolean;
   error: string | null;
   register: (name: string) => Promise<void>;
-  login: () => Promise<void>;
+  login: () => Promise<UserAuth | void>;
   logout: () => Promise<void>;
 }
 
@@ -34,15 +42,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return Device.deviceName || Device.modelId || "unknown-device";
   };
 
-  const api = useMemo(() => {
-    return new ApiClient(auth?.token);
-  }, [auth?.token]);
+  const authApi = useMemo(() => {
+    return new AuthClient(new ApiClient());
+  }, []);
 
   useEffect(() => {
     getStoredJson<UserAuth>(AUTH_STORAGE_KEY)
       .then((storedAuth) => {
         if (storedAuth) {
-          setAuth(storedAuth);
+          setAuth({
+            ...storedAuth,
+            tokenExpiresAt: storedAuth.tokenExpiresAt
+              ? new Date(storedAuth.tokenExpiresAt)
+              : undefined,
+          });
         }
       })
       .catch((err) => setError(err.message))
@@ -55,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
 
       const deviceId = getDeviceId();
-      const response = await api.auth.registerUser({
+      const response = await authApi.registerUser({
         name,
         device_id: deviceId,
       });
@@ -78,22 +91,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const login = async () => {
+  const login = useCallback(async () => {
+    let authData: UserAuth | null = null;
     try {
       setError(null);
       setIsLoading(true);
 
       const deviceId = getDeviceId();
-      const response = await api.auth.loginUser({
+      const response = await authApi.loginUser({
         device_id: deviceId,
       });
 
-      const authData: UserAuth = {
+      authData = {
         name: response.name,
         userId: response.user_id,
         deviceId,
         approved: true,
         token: response.token,
+        tokenExpiresAt: new Date(response.token_expires_at),
       };
 
       await storeJson(AUTH_STORAGE_KEY, authData);
@@ -104,7 +119,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+
+    return authData;
+  }, [authApi]);
 
   const logout = async () => {
     try {

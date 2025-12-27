@@ -20,7 +20,7 @@ type Claims struct {
 }
 
 // GenerateToken creates a JWT token valid for 30 days.
-func GenerateToken(userID string, secretKey string) (string, error) {
+func GenerateToken(userID string, secretKey string) *jwt.Token {
 	expirationTime := time.Now().Add(30 * 24 * time.Hour)
 
 	claims := &Claims{
@@ -32,11 +32,14 @@ func GenerateToken(userID string, secretKey string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token
+}
+
+func SignToken(token *jwt.Token, secretKey string) (string, error) {
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
-
 	return tokenString, nil
 }
 

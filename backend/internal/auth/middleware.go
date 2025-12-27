@@ -37,7 +37,7 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 		claims, err := ValidateToken(token, h.secretKey)
 		if err != nil {
 			slog.Error("token validation failed", "error", err)
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 			if errors.Is(err, ErrTokenExpired) {
 				json.NewEncoder(w).Encode(map[string]string{"error": ErrTokenExpired.Error()})
 			} else {

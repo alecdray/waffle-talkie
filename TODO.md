@@ -2,8 +2,8 @@
 
 ## In Progress
 
-- [] Implement expired/invalid token handling 
-
 ## Backlog
 
 ## Done
+
+- [x] Implement expired/invalid token handling

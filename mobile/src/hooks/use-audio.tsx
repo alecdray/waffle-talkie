@@ -41,7 +41,7 @@ export const getAudioUri = (messageId: string): string | null => {
 };
 
 export const useAudio = () => {
-  const { api } = useClient();
+  const { getClient } = useClient();
 
   /**
    * Gets all stored message IDs from local audio files
@@ -74,6 +74,7 @@ export const useAudio = () => {
     ensureAudioDirectoryExists();
     const file = getAudioFile(messageId);
 
+    const api = await getClient();
     await api.audio.downloadAndSaveAudio(messageId, file);
     await api.audio.markMessageReceived(messageId);
   };
@@ -82,6 +83,7 @@ export const useAudio = () => {
    * Prefetches multiple audio files in parallel and returns IDs of successfully downloaded files
    */
   const prefetchUserAudioMessages = async (): Promise<string[]> => {
+    const api = await getClient();
     const messageIds = (await api.audio.getMessages()).map(
       (message) => message.id,
     );

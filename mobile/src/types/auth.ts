@@ -1,15 +1,10 @@
-export interface AuthTokens {
-  token: string;
-  userId: string;
-  name: string;
-}
-
 export interface UserAuth {
   name: string;
   userId: string;
   deviceId: string;
   approved: boolean;
   token?: string;
+  tokenExpiresAt?: Date;
 }
 
 export interface RegisterRequest {
@@ -29,5 +24,6 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string;
   user_id: string;
+  token_expires_at: string;
   name: string;
 }
