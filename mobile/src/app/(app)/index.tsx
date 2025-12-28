@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/src/hooks/use-auth";
 import { PlayedStatus, StoredMessage, useAudio } from "@/src/hooks/use-audio";
 import { BasicProgressBar } from "@/src/components/progress/progress-bar";
+import { useUsers } from "@/src/hooks/user-users";
 
 const formatDate = (epochMs: number | null) => {
   if (!epochMs) return "Unknown";
@@ -42,6 +43,7 @@ export default function Index() {
   const { auth } = useAuth();
   const { messages, prefetchUserAudioMessages, updatePlayedStatus } =
     useAudio();
+  const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [playingMessage, setPlayingMessage] = useState<StoredMessage | null>(
@@ -52,29 +54,32 @@ export default function Index() {
   const playerStatus = useAudioPlayerStatus(player);
   const playbackPercentage = playerStatus.currentTime / playerStatus.duration;
 
-  const fetchMessages = async (isRefresh = false) => {
-    if (!auth?.token) return;
+  const fetchMessages = useCallback(
+    async (isRefresh = false) => {
+      if (!auth?.token) return;
 
-    try {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
+      try {
+        if (isRefresh) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
+        }
+
+        await prefetchUserAudioMessages();
+      } catch (error) {
+        console.error(error);
+        Alert.alert("Error", "Failed to fetch messages");
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-
-      await prefetchUserAudioMessages();
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to fetch messages");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+    },
+    [auth?.token, prefetchUserAudioMessages],
+  );
 
   useEffect(() => {
     fetchMessages();
-  });
+  }, []);
 
   useEffect(() => {
     if (!playerStatus.playing && playingMessage) {
@@ -120,14 +125,14 @@ export default function Index() {
 
   const onRefresh = useCallback(() => {
     fetchMessages(true);
-  }, []);
+  }, [fetchMessages]);
 
   const renderMessage = ({ item }: { item: StoredMessage }) => {
     const isOnDeck = playingMessage?.metadata.id === item.metadata.id;
     const isPlaying = isOnDeck && playerStatus.playing;
     const isPlayed =
       !isPlaying && item.metadata.playedStatus !== PlayedStatus.UNPLAYED;
-
+    const sentBy = users.get(item.metadata.senderUserId);
     const isLoading = isOnDeck && !playerStatus.isLoaded;
 
     return (
@@ -153,12 +158,8 @@ export default function Index() {
             )}
           </View>
           <View style={styles.messageInfo}>
-            {/*<Text
-              style={[styles.messageDuration, isPlayed && styles.textPlayed]}
-            >
-              {formatDuration((item.info().size ?? 0))}
-            </Text>*/}
             <Text style={[styles.messageDate, isPlayed && styles.textPlayed]}>
+              {`${sentBy?.name} `}
               {formatDate(item.file.creationTime)}
             </Text>
           </View>

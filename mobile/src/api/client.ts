@@ -1,6 +1,7 @@
 import { AudioClient } from "./audio";
 import { AuthClient } from "./auth";
 import { API_URL, createHeaders } from "./config";
+import { UsersClient } from "./users";
 
 export class ClientError extends Error {
   status?: number;
@@ -46,6 +47,7 @@ export class ApiClient {
   token?: string;
   auth: AuthClient;
   audio: AudioClient;
+  users: UsersClient;
 
   constructor({
     token,
@@ -55,9 +57,12 @@ export class ApiClient {
     this.token = token;
     this.auth = new AuthClient(this);
     this.audio = new AudioClient(this);
+    this.users = new UsersClient(this);
   }
 
   fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+    console.debug("fetchJson", path, init);
+
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
