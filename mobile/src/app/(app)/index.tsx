@@ -1,0 +1,341 @@
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/src/hooks/use-auth";
+import { PlayedStatus, StoredMessage, useAudio } from "@/src/hooks/use-audio";
+import { BasicProgressBar } from "@/src/components/progress/progress-bar";
+import { useUsers } from "@/src/hooks/user-users";
+
+const formatDate = (epochMs: number | null) => {
+  if (!epochMs) return "Unknown";
+  const date = new Date(epochMs);
+  const now = new Date();
+  const diffInHours = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60),
+  );
+
+  if (diffInHours < 1) {
+    return "Just now";
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+};
+
+const formatDuration = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};
+
+export default function Index() {
+  const { auth } = useAuth();
+  const { messages, prefetchUserAudioMessages, updatePlayedStatus } =
+    useAudio();
+  const { users } = useUsers();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [playingMessage, setPlayingMessage] = useState<StoredMessage | null>(
+    null,
+  );
+
+  const player = useAudioPlayer();
+  const playerStatus = useAudioPlayerStatus(player);
+  const playbackPercentage = playerStatus.currentTime / playerStatus.duration;
+
+  const fetchMessages = useCallback(
+    async (isRefresh = false) => {
+      if (!auth?.token) return;
+
+      try {
+        if (isRefresh) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
+        }
+
+        await prefetchUserAudioMessages();
+      } catch (error) {
+        console.error(error);
+        Alert.alert("Error", "Failed to fetch messages");
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [auth?.token, prefetchUserAudioMessages],
+  );
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  useEffect(() => {
+    if (!playerStatus.playing && playingMessage) {
+      const timeoutId = setTimeout(() => {
+        setPlayingMessage(null);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [playerStatus.playing, playingMessage]);
+
+  useEffect(() => {
+    if (!playingMessage) return;
+
+    try {
+      player.replace(playingMessage.file.uri);
+      player.play();
+      if (playingMessage.metadata.playedStatus === PlayedStatus.UNPLAYED) {
+        updatePlayedStatus(
+          playingMessage.metadata.id,
+          PlayedStatus.STARTED,
+        ).catch((error) => {
+          console.warn(error);
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to play message");
+      setPlayingMessage(null);
+    }
+  }, [playingMessage, player, updatePlayedStatus]);
+
+  const handlePressMessage = async (message: StoredMessage) => {
+    if (!auth?.token) return;
+
+    const { metadata } = message;
+
+    if (playingMessage?.metadata.id === metadata.id && playerStatus.playing) {
+      player.pause();
+      return;
+    }
+    setPlayingMessage(message);
+  };
+
+  const onRefresh = useCallback(() => {
+    fetchMessages(true);
+  }, [fetchMessages]);
+
+  const renderMessage = ({ item }: { item: StoredMessage }) => {
+    const isOnDeck = playingMessage?.metadata.id === item.metadata.id;
+    const isPlaying = isOnDeck && playerStatus.playing;
+    const isPlayed =
+      !isPlaying && item.metadata.playedStatus !== PlayedStatus.UNPLAYED;
+    const sentBy = users.get(item.metadata.senderUserId);
+    const isLoading = isOnDeck && !playerStatus.isLoaded;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.messageCard,
+          isPlaying && styles.messageCardPlaying,
+          isPlayed && styles.messageCardPlayed,
+        ]}
+        onPress={() => handlePressMessage(item)}
+      >
+        <View style={styles.messageHeader}>
+          <View
+            style={[
+              styles.playIconContainer,
+              isPlayed && styles.playIconContainerPlayed,
+            ]}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#666" />
+            ) : (
+              <Text style={styles.playIcon}>{isPlaying ? "⏸" : "▶️"}</Text>
+            )}
+          </View>
+          <View style={styles.messageInfo}>
+            <Text style={[styles.messageDate, isPlayed && styles.textPlayed]}>
+              {`${sentBy?.name} `}
+              {formatDate(item.file.creationTime)}
+            </Text>
+          </View>
+          {isPlayed && <Text style={styles.playedBadge}>✓</Text>}
+        </View>
+        {isPlaying && (
+          <View style={styles.progressContainer}>
+            <BasicProgressBar
+              progress={playbackPercentage * 100}
+              textStyle={{ color: "#666", fontSize: 12 }}
+              leftBottomText={formatDuration(playerStatus.currentTime)}
+              rightBottomText={formatDuration(playerStatus.duration)}
+            />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  if (isLoading || !messages) {
+    return (
+      <SafeAreaView style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Inbox</Text>
+        <Text style={styles.subtitle}>
+          {messages.length === 0 ? "No messages" : "You have messages"}
+        </Text>
+      </View>
+
+      <FlatList
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.metadata.fileUri}
+        contentContainerStyle={
+          messages.length === 0 ? styles.emptyContainer : styles.listContainer
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>📭</Text>
+            <Text style={styles.emptyStateTitle}>No messages yet</Text>
+            <Text style={styles.emptyStateSubtitle}>
+              When someone sends you an audio message, it will appear here
+            </Text>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        }
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    padding: 24,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+  },
+  listContainer: {
+    padding: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    padding: 32,
+  },
+  emptyStateText: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#333",
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  messageCard: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  messageCardPlaying: {
+    borderColor: "#007AFF",
+    backgroundColor: "#E8F4FD",
+  },
+  messageCardPlayed: {
+    opacity: 0.6,
+  },
+  messageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  playIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#007AFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  playIconContainerPlayed: {
+    backgroundColor: "#8E8E93",
+  },
+  playIcon: {
+    fontSize: 20,
+  },
+  messageInfo: {
+    flex: 1,
+  },
+  messageDuration: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  messageDate: {
+    fontSize: 14,
+    color: "#666",
+  },
+  textPlayed: {
+    color: "#999",
+  },
+  playedBadge: {
+    fontSize: 20,
+    color: "#8E8E93",
+    marginLeft: 8,
+  },
+  playingIndicator: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+  },
+  playingText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  progressContainer: {
+    marginTop: 24,
+  },
+});

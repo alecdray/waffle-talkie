@@ -8,8 +8,10 @@
     "scheme": "waffletalkie",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {},
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.waffle-talkie"
     },
     "android": {
       "adaptiveIcon": {
@@ -38,7 +40,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

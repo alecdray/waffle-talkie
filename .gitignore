@@ -18,6 +18,8 @@
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
+# Claude
+.claude/
 
 # Operating System files
 .DS_Store
