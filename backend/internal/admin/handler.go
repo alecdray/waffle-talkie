@@ -14,6 +14,6 @@ func NewHandler(queries *database.Queries) *Handler {
 	return &Handler{queries: queries}
 }
 
-func (h *Handler) RegisterRoutes(router *http.ServeMux, prefix string) {
+func (h *Handler) RegisterRoutes(router *http.ServeMux) {
 
 }

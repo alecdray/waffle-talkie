@@ -21,8 +21,8 @@ func NewHandler(queries *database.Queries) *Handler {
 }
 
 // RegisterRoutes registers the user-related routes with the provided ServeMux.
-func (h *Handler) RegisterRoutes(mux *http.ServeMux, prefix string) {
-	mux.HandleFunc(prefix+"/users", h.HandleGetUsers)
+func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/users", h.HandleGetUsers)
 }
 
 type UserRole string

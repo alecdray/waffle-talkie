@@ -27,9 +27,9 @@ func NewHandler(queries *database.Queries, secretKey string) *Handler {
 }
 
 // RegisterRoutes registers auth routes on the provided mux.
-func (h *Handler) RegisterRoutes(mux *http.ServeMux, prefix string) {
-	mux.HandleFunc(prefix+"/register", h.HandleRegister)
-	mux.HandleFunc(prefix+"/login", h.HandleLogin)
+func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/register", h.HandleRegister)
+	mux.HandleFunc("/login", h.HandleLogin)
 }
 
 type RegisterRequest struct {
