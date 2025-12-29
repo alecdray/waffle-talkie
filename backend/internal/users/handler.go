@@ -20,6 +20,22 @@ func NewHandler(queries *database.Queries) *Handler {
 	}
 }
 
+// RegisterRoutes registers the user-related routes with the provided ServeMux.
+func (h *Handler) RegisterRoutes(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc(prefix+"/users", h.HandleGetUsers)
+}
+
+type UserRole string
+
+const (
+	UserRoleAdmin UserRole = "admin"
+	UserRoleUser  UserRole = "user"
+)
+
+func (role UserRole) IsAdmin() bool {
+	return role == UserRoleAdmin
+}
+
 type User struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -48,7 +64,7 @@ func (h *Handler) HandleGetUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"users": users,
 	})
 }

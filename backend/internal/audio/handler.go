@@ -35,6 +35,13 @@ func NewHandler(queries *database.Queries, audioDirectory string) *Handler {
 	}
 }
 
+func (h *Handler) RegisterRoutes(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc(prefix+"/audio-messages", h.HandleGetMessages)
+	mux.HandleFunc(prefix+"/audio-messages/upload", h.HandleUpload)
+	mux.HandleFunc(prefix+"/audio-messages/download", h.HandleDownload)
+	mux.HandleFunc(prefix+"/audio-messages/received", h.HandleMarkReceived)
+}
+
 type UploadResponse struct {
 	MessageID string `json:"message_id"`
 	Message   string `json:"message"`

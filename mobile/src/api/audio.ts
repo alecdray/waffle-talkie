@@ -1,13 +1,12 @@
 import { File } from "expo-file-system";
 import {
   AudioMessage,
-  MarkReceivedRequest,
   MarkReceivedResponse,
   MessagesResponse,
   UploadAudioResponse,
 } from "../types/audio";
 import { ApiClient } from "./client";
-import { API_URL, createHeaders } from "./config";
+import { API_URL } from "./config";
 
 export class AudioClient {
   constructor(private api: ApiClient) {}
@@ -28,7 +27,7 @@ export class AudioClient {
     formData.append("duration", duration.toString());
 
     const response = await this.api.fetchJson<UploadAudioResponse>(
-      "/api/messages/upload",
+      "/api/audio-messages/upload",
       {
         method: "POST",
         body: formData,
@@ -40,7 +39,7 @@ export class AudioClient {
 
   getMessages = async (): Promise<AudioMessage[]> => {
     const response = await this.api.fetchJson<MessagesResponse>(
-      "/api/messages",
+      "/api/audio-messages",
       {
         method: "GET",
       },
@@ -50,7 +49,7 @@ export class AudioClient {
   };
 
   downloadAudio = async (messageId: string, file: File): Promise<string> => {
-    const downloadUrl = `${API_URL}/api/messages/download?id=${messageId}`;
+    const downloadUrl = `${API_URL}/api/audio-messages/download?id=${messageId}`;
 
     const downloadedFile = await File.downloadFileAsync(downloadUrl, file, {
       headers: {
@@ -65,7 +64,7 @@ export class AudioClient {
     messageId: string,
   ): Promise<MarkReceivedResponse> => {
     const response = await this.api.fetchJson<MarkReceivedResponse>(
-      "/api/messages/received",
+      "/api/audio-messages/received",
       {
         method: "POST",
         body: JSON.stringify({ message_id: messageId }),

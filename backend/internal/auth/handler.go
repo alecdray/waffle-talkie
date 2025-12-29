@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alecdray/waffle-talkie/internal/database"
+	"github.com/alecdray/waffle-talkie/internal/users"
 	"github.com/google/uuid"
 )
 
@@ -23,6 +24,12 @@ func NewHandler(queries *database.Queries, secretKey string) *Handler {
 		queries:   queries,
 		secretKey: secretKey,
 	}
+}
+
+// RegisterRoutes registers auth routes on the provided mux.
+func (h *Handler) RegisterRoutes(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc(prefix+"/register", h.HandleRegister)
+	mux.HandleFunc(prefix+"/login", h.HandleLogin)
 }
 
 type RegisterRequest struct {
@@ -115,11 +122,12 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token          string    `json:"token"`
-	TokenExpiresAt time.Time `json:"token_expires_at"`
-	UserID         string    `json:"user_id"`
-	Name           string    `json:"name"`
-	Message        string    `json:"message,omitempty"`
+	Token          string         `json:"token"`
+	TokenExpiresAt time.Time      `json:"token_expires_at"`
+	UserID         string         `json:"user_id"`
+	Name           string         `json:"name"`
+	Role           users.UserRole `json:"role"`
+	Message        string         `json:"message,omitempty"`
 }
 
 // HandleLogin authenticates approved users and returns a JWT token.
@@ -140,7 +148,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := h.queries.ListUsers(r.Context())
+	allUsers, err := h.queries.ListUsers(r.Context())
 	if err != nil {
 		slog.Error("failed to list users", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -148,7 +156,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user *database.User
-	for _, u := range users {
+	for _, u := range allUsers {
 		if CompareDeviceID(u.DeviceIDHash, req.DeviceID) {
 			user = &u
 			break
@@ -190,6 +198,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		TokenExpiresAt: tokenExpiresAt.Time,
 		UserID:         user.ID,
 		Name:           user.Name,
+		Role:           users.UserRole(user.Role),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

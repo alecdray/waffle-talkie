@@ -15,8 +15,8 @@ const (
 	UserIDKey contextKey = "user_id"
 )
 
-// AuthMiddleware extracts and validates the Bearer token, then adds user context.
-func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+// IsAuthenticatedMiddleware extracts and validates the Bearer token, then adds user context.
+func IsAuthenticatedMiddleware(next http.Handler, secretKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -34,7 +34,7 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 		token := parts[1]
 
 		// Validate token
-		claims, err := ValidateToken(token, h.secretKey)
+		claims, err := ValidateToken(token, secretKey)
 		if err != nil {
 			slog.Error("token validation failed", "error", err)
 			w.WriteHeader(http.StatusUnauthorized)
