@@ -1,5 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO users (id, name, device_id, approved)
+INSERT INTO users (id, name, device_id_hash, approved)
 VALUES (?, ?, ?, ?)
 RETURNING *;
 
@@ -9,7 +9,7 @@ WHERE id = ?;
 
 -- name: GetUserByDeviceID :one
 SELECT * FROM users
-WHERE device_id = ?;
+WHERE device_id_hash = ?;
 
 -- name: ListUsers :many
 SELECT * FROM users

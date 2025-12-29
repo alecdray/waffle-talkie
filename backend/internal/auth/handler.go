@@ -61,7 +61,7 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, existingUser := range users {
-		if CompareDeviceID(existingUser.DeviceID, req.DeviceID) {
+		if CompareDeviceID(existingUser.DeviceIDHash, req.DeviceID) {
 			if existingUser.Name != req.Name {
 				h.queries.UpdateUserName(r.Context(), database.UpdateUserNameParams{
 					ID:   existingUser.ID,
@@ -87,10 +87,10 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.queries.CreateUser(r.Context(), database.CreateUserParams{
-		ID:       uuid.New().String(),
-		Name:     req.Name,
-		DeviceID: hashedDeviceID,
-		Approved: false,
+		ID:           uuid.New().String(),
+		Name:         req.Name,
+		DeviceIDHash: hashedDeviceID,
+		Approved:     false,
 	})
 	if err != nil {
 		slog.Error("failed to create user", "error", err)
@@ -149,7 +149,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var user *database.User
 	for _, u := range users {
-		if CompareDeviceID(u.DeviceID, req.DeviceID) {
+		if CompareDeviceID(u.DeviceIDHash, req.DeviceID) {
 			user = &u
 			break
 		}

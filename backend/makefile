@@ -23,7 +23,7 @@ dev: ## Run with hot reload (using air)
 test: ## Run tests
 	go test -v ./...
 
-sqlc: ## Regenerate sqlc code from schema
+db-generate: ## Regenerate sqlc code from schema
 	sqlc generate
 
 clean: ## Remove build artifacts and temporary files

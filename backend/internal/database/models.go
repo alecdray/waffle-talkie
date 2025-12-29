@@ -25,11 +25,24 @@ type AudioMessageReceipt struct {
 	ReceivedAt     time.Time `json:"received_at"`
 }
 
+type GooseDbVersion struct {
+	ID        int64        `json:"id"`
+	VersionID int64        `json:"version_id"`
+	IsApplied int64        `json:"is_applied"`
+	Tstamp    sql.NullTime `json:"tstamp"`
+}
+
+type SqliteSequence struct {
+	Name interface{} `json:"name"`
+	Seq  interface{} `json:"seq"`
+}
+
 type User struct {
-	ID         string       `json:"id"`
-	Name       string       `json:"name"`
-	DeviceID   string       `json:"device_id"`
-	Approved   bool         `json:"approved"`
-	LastActive sql.NullTime `json:"last_active"`
-	CreatedAt  time.Time    `json:"created_at"`
+	ID           string       `json:"id"`
+	Name         string       `json:"name"`
+	DeviceIDHash string       `json:"device_id_hash"`
+	Approved     bool         `json:"approved"`
+	LastActive   sql.NullTime `json:"last_active"`
+	Role         string       `json:"role"`
+	CreatedAt    time.Time    `json:"created_at"`
 }

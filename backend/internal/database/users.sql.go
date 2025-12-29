@@ -21,32 +21,33 @@ func (q *Queries) ApproveUser(ctx context.Context, id string) error {
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, name, device_id, approved)
+INSERT INTO users (id, name, device_id_hash, approved)
 VALUES (?, ?, ?, ?)
-RETURNING id, name, device_id, approved, last_active, created_at
+RETURNING id, name, device_id_hash, approved, last_active, role, created_at
 `
 
 type CreateUserParams struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	DeviceID string `json:"device_id"`
-	Approved bool   `json:"approved"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	DeviceIDHash string `json:"device_id_hash"`
+	Approved     bool   `json:"approved"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.ID,
 		arg.Name,
-		arg.DeviceID,
+		arg.DeviceIDHash,
 		arg.Approved,
 	)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.DeviceID,
+		&i.DeviceIDHash,
 		&i.Approved,
 		&i.LastActive,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -63,7 +64,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, device_id, approved, last_active, created_at FROM users
+SELECT id, name, device_id_hash, approved, last_active, role, created_at FROM users
 WHERE id = ?
 `
 
@@ -73,35 +74,37 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.DeviceID,
+		&i.DeviceIDHash,
 		&i.Approved,
 		&i.LastActive,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByDeviceID = `-- name: GetUserByDeviceID :one
-SELECT id, name, device_id, approved, last_active, created_at FROM users
-WHERE device_id = ?
+SELECT id, name, device_id_hash, approved, last_active, role, created_at FROM users
+WHERE device_id_hash = ?
 `
 
-func (q *Queries) GetUserByDeviceID(ctx context.Context, deviceID string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByDeviceID, deviceID)
+func (q *Queries) GetUserByDeviceID(ctx context.Context, deviceIDHash string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByDeviceID, deviceIDHash)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.DeviceID,
+		&i.DeviceIDHash,
 		&i.Approved,
 		&i.LastActive,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listApprovedUsers = `-- name: ListApprovedUsers :many
-SELECT id, name, device_id, approved, last_active, created_at FROM users
+SELECT id, name, device_id_hash, approved, last_active, role, created_at FROM users
 WHERE approved = TRUE
 ORDER BY created_at DESC
 `
@@ -118,9 +121,10 @@ func (q *Queries) ListApprovedUsers(ctx context.Context) ([]User, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.DeviceID,
+			&i.DeviceIDHash,
 			&i.Approved,
 			&i.LastActive,
+			&i.Role,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -137,7 +141,7 @@ func (q *Queries) ListApprovedUsers(ctx context.Context) ([]User, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, device_id, approved, last_active, created_at FROM users
+SELECT id, name, device_id_hash, approved, last_active, role, created_at FROM users
 ORDER BY created_at DESC
 `
 
@@ -153,9 +157,10 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.DeviceID,
+			&i.DeviceIDHash,
 			&i.Approved,
 			&i.LastActive,
+			&i.Role,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
