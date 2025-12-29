@@ -18,8 +18,7 @@ dev: ## Run with hot reload (using air)
 	--build.cmd "go build -v -o ./bin/server ./cmd/server" --build.bin "./bin/server" --build.delay "100" \
 	--build.exclude_dir "node_modules" \
 	--build.include_ext "go" \
-	--build.stop_on_error "false" \
-	--misc.clean_on_exit true
+	--build.stop_on_error "false"
 
 test: ## Run tests
 	go test -v ./...
@@ -30,3 +29,6 @@ sqlc: ## Regenerate sqlc code from schema
 clean: ## Remove build artifacts and temporary files
 	rm -rf ./bin
 	rm -rf ./tmp
+
+docker-build: ## Build Docker image
+	docker build -t waffle-talkie .

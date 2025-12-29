@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -13,10 +14,17 @@ import (
 func InitDB(dbPath string) (*sql.DB, *Queries, error) {
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		slog.Info("creating new database file", "path", dbPath)
+
+		dbDir := filepath.Dir(dbPath)
+		if err := os.MkdirAll(dbDir, 0755); err != nil {
+			return nil, nil, fmt.Errorf("failed to create database directory: %w", err)
+		}
+
 		file, err := os.Create(dbPath)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create database file: %w", err)
 		}
+
 		file.Close()
 	}
 

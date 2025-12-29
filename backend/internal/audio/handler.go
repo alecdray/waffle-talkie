@@ -24,6 +24,11 @@ type Handler struct {
 
 // NewHandler creates an audio handler with database access and storage path.
 func NewHandler(queries *database.Queries, audioDirectory string) *Handler {
+	if err := os.MkdirAll(audioDirectory, 0755); err != nil {
+		slog.Error("failed to create audio directory", "error", err)
+		panic("failed to create audio directory")
+	}
+
 	return &Handler{
 		queries:        queries,
 		audioDirectory: audioDirectory,
@@ -69,12 +74,6 @@ func (h *Handler) HandleUpload(w http.ResponseWriter, r *http.Request) {
 	duration, err := strconv.ParseInt(durationStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid duration format", http.StatusBadRequest)
-		return
-	}
-
-	if err := os.MkdirAll(h.audioDirectory, 0755); err != nil {
-		slog.Error("failed to create audio directory", "error", err)
-		http.Error(w, "Failed to create storage directory", http.StatusInternalServerError)
 		return
 	}
 

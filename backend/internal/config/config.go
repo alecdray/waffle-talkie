@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -12,8 +13,7 @@ var Config *config = nil
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		slog.Error("failed to load .env file", "error", err)
-		panic(err)
+		slog.Warn("failed to load .env file", "error", err)
 	}
 
 	Config = NewConfig()
@@ -32,9 +32,18 @@ func NewConfig() *config {
 		Env:            getEnvWithDefault("ENV", "local"),
 		Port:           getEnvWithDefault("PORT", "8080"),
 		DatabasePath:   getEnvWithDefault("DATABASE_PATH", "./tmp/waffle-talkie.db"),
-		JWTSecret:      getEnvWithDefault("JWT_SECRET", "dev-secret-change-in-production"),
 		AudioDirectory: getEnvWithDefault("AUDIO_DIRECTORY", "./tmp/audio"),
+		JWTSecret:      getRequiredEnv("JWT_SECRET"),
 	}
+}
+
+func getRequiredEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		slog.Error("required environment variable not set", "key", key)
+		panic(fmt.Sprintf("required environment variable %s not set", key))
+	}
+	return value
 }
 
 func getEnvWithDefault(key string, defaultValue string) string {

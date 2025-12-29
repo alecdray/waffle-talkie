@@ -1,0 +1,31 @@
+FROM golang:1.24 AS build
+
+WORKDIR /usr/src/app
+
+# pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -v -o ./bin/server ./cmd/server
+
+FROM golang:1.24
+
+LABEL org.opencontainers.image.source=https://github.com/CaribouBlue/mixtape
+LABEL org.opencontainers.image.licenses=MIT
+
+ARG ENV=prod
+ARG PORT=80
+ARG DATABASE_PATH=/var/lib/app/app.db
+ARG AUDIO_DIRECTORY=/var/tmp/app/audio
+
+ENV ENV=${ENV}
+ENV PORT=${PORT}
+ENV DATABASE_PATH=${DATABASE_PATH}
+ENV AUDIO_DIRECTORY=${AUDIO_DIRECTORY}
+
+COPY --from=build /usr/src/app/bin /usr/local/bin
+
+EXPOSE ${PORT}
+
+CMD ["server"]
