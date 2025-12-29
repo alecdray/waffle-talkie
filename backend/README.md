@@ -8,11 +8,18 @@ Go backend server for Waffle Talkie voice messaging app.
 - **Database**: SQLite with sqlc for type-safe queries
 - **Auth**: JWT tokens (30-day expiration) with bcrypt hashed device IDs
 
+## Prerequisites
+
+- [Go](https://golang.org/dl/) 1.21+
+- [Task](https://taskfile.dev/installation/) - Task runner
+- [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) - SQL code generator (optional, for schema changes)
+- [goose](https://github.com/pressly/goose) - Database migration tool (optional, for migrations)
+
 ## Quick Start
 
 1. **Run setup** (creates .env, directories, installs deps):
 ```bash
-make setup
+task setup
 ```
 
 2. **Edit `.env`** with your settings:
@@ -32,21 +39,21 @@ Key environment variables:
 
 3. **Build and run**:
 ```bash
-make run
+task app:run
 ```
 
 ## Development
 
 ```bash
-make help         # Show all available commands
-make setup        # Initial project setup (first time only)
-make build        # Build the server binary
-make run          # Build and run the server
-make dev          # Run with hot reload (using air)
-make test         # Run tests
-make sqlc         # Regenerate sqlc code after schema changes
-make clean        # Remove build artifacts
-make docker-build # Build Docker image
+task              # Show all available commands
+task setup        # Initial project setup (first time only)
+task app:build    # Build the server binary
+task app:run      # Build and run the server
+task app:dev      # Run with hot reload (using air)
+task app:test     # Run tests
+task db:generate  # Regenerate sqlc code from schema
+task clean        # Remove build artifacts
+task docker:build # Build Docker image
 ```
 
 ## Project Structure

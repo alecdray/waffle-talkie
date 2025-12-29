@@ -1,0 +1,62 @@
+# https://taskfile.dev
+
+version: "3"
+
+dotenv:
+  - .env
+
+tasks:
+  default:
+    desc: Show all available tasks
+    cmds:
+      - task -a
+
+  setup:
+    desc: Initial project setup (create .env, directories, install deps)
+    cmds:
+      - ./scripts/setup.sh
+
+  "app:build":
+    desc: Build the server binary
+    cmds:
+      - go build -v -o ./bin/server ./cmd/server
+
+  "app:run":
+    desc: Build and run the server
+    deps:
+      - build
+    cmds:
+      - ./bin/server
+
+  "app:dev":
+    desc: Run with hot reload (using air)
+    cmds:
+      - >
+        go run github.com/air-verse/air@v1.63.0
+        --build.cmd "go build -v -o ./bin/server ./cmd/server"
+        --build.bin "./bin/server"
+        --build.delay "100"
+        --build.exclude_dir "node_modules"
+        --build.include_ext "go"
+        --build.stop_on_error "false"
+
+  "app:test":
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  "db:generate":
+    desc: Regenerate sqlc code from schema
+    cmds:
+      - sqlc generate
+
+  clean:
+    desc: Remove build artifacts and temporary files
+    cmds:
+      - rm -rf ./bin
+      - rm -rf ./tmp
+
+  "docker:build":
+    desc: Build Docker image
+    cmds:
+      - docker build -t waffle-talkie .
