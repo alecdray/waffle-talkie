@@ -1,4 +1,3 @@
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 const getDefaultApiUrl = () => {
@@ -10,7 +9,7 @@ const getDefaultApiUrl = () => {
     }
     return "http://localhost:8080";
   }
-  return "https://api.example.com";
+  return "https://waffle-talkie.shmoopysworld.com";
 };
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || getDefaultApiUrl();
