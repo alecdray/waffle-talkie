@@ -32,15 +32,27 @@ EXPO_PUBLIC_API_URL=http://localhost:8080
 # Start development server
 npm start
 
-# Run on iOS
+# Run on iOS Simulator
 npm run start:ios
+
+# Run on iOS device
+npm run run:ios
 
 # Run on Android
 npm run run:android
+
+# Run on web
+npm run start:web
 ```
 
 ## Environment Variables
 
+Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
+
+**Available variables:**
 - `EXPO_PUBLIC_API_URL`: Backend API base URL (required)
 
-The app will automatically use the appropriate default URL based on the platform if no environment variable is set.
+**Note:** `.env` files are for local development only. For production, set environment variables through your deployment platform.
